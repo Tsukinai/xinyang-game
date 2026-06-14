@@ -137,13 +137,21 @@
   function skills(){
     const cls=DATA.classes[G.classId];
     const learned=(G.skills||[]).concat(G.setSkills||[]).map(id=>{ const s=DATA.skills[id]; if(!s) return '';
+      const isSet=(G.setSkills||[]).indexOf(id)>=0; const isBook=(G.bookSkills||[]).indexOf(id)>=0;
+      const prof=s.type==='active'?Skills.profLv(id):0; const tag=isSet?' <span class="tag q-gold">套装</span>':isBook?' <span class="tag q-blue">技能书</span>':'';
       return `<div class="skill-row"><span class="si">${s.icon||'✨'}</span><div class="sd">
-        <div class="snm">${E(s.name)} <span class="tiny dim">${s.type==='passive'?'被动':'Lv'+(s.reqLevel||1)+' · '+cls.resource+(s.mpCost||0)+(s.cooldown?' · CD'+s.cooldown:'')}</span></div>
+        <div class="snm">${E(s.name)}${prof>1?` <span class="q-gold tiny">熟练Lv${prof}</span>`:''}${tag} <span class="tiny dim">${s.type==='passive'?'被动':cls.resource+(s.mpCost||0)+(s.cooldown?' · CD'+s.cooldown:'')}</span></div>
         <div class="sde">${E(s.desc)}</div></div></div>`; }).join('');
     const next=Skills.nextUnlock();
-    return `<h2 class="title">✨ 技能<small>${cls.name}</small></h2>
+    const lp=G.lockpick||{learned:false,lv:1};
+    const lifeRows=[];
+    lifeRows.push(`<div class="kv"><span>🗝️ 开锁</span><b>${lp.learned?'熟练 Lv'+lp.lv:'未习得（需技能书/开锁器）'}</b></div>`);
+    if(G.profession) lifeRows.push(`<div class="kv"><span>${DATA.professions[G.profession].icon} ${DATA.professions[G.profession].name}</span><b>${World.profRankName()}</b></div>`);
+    return `<h2 class="title">✨ 技能<small>${G.advClass||cls.name}</small></h2>
+      <p class="dim tiny">主动技能使用即积累熟练度（最高 Lv10，每级 +3% 威力）。技能书可从商店/任务/BOSS/宝箱获得。</p>
       <div class="list" style="background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 11px">${learned||'<div class="empty">尚未习得技能</div>'}</div>
-      ${next?`<p class="dim tiny" style="margin-top:8px">下一个技能：【${E(next.name)}】将在 Lv${next.reqLevel} 自动习得。</p>`:'<p class="dim tiny">已习得全部当前技能。</p>'}`;
+      ${next?`<p class="dim tiny" style="margin-top:8px">下一个技能：【${E(next.name)}】将在 Lv${next.reqLevel} 自动习得。</p>`:'<p class="dim tiny">已习得全部职业技能。</p>'}
+      <h3 class="sub">生活技能</h3><div class="card">${lifeRows.join('')}</div>`;
   }
 
   // ============ 任务 ============

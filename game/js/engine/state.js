@@ -30,6 +30,9 @@
       bag: [],                  // [{id, qty}]  装备实例用 {id, _u:true, ...stats?} 直接入包
       skills: [],               // 已学技能 id（按等级解锁后自动学）
       learned: {},              // skillId -> true
+      skillProf: {},            // 技能熟练度 skillId -> {lv,exp}（用技能练级）
+      lockpick: { learned: classId==='rogue', lv:1, exp:0 }, // 开锁生活技能（盗贼天生会）
+      bookSkills: [],            // 通过技能书习得的额外技能 id
       quests: {},               // questId -> {status:'active'|'done', prog:n}
       questsDone: {},           // questId -> true
       flags: {},                // 任意剧情/隐藏开关

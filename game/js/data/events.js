@@ -73,32 +73,35 @@ window.DATA = window.DATA || {};
     }
   }
 
-  // 开宝箱
-  function openChest(tier, viaLockpick){
-    const isRogue = G.classId==='rogue';
-    if (!isRogue && viaLockpick){
-      if (Systems.countItem('lockpick')<=0) return { ok:false, why:'没有开锁器' };
-      Systems.removeItem('lockpick',1);
+  // 开宝箱（开锁=可学的生活技能，熟练度越高成功率/品质越好；未学则用开锁器）
+  function openChest(tier){
+    const lp = G.lockpick || (G.lockpick={learned:G.classId==='rogue',lv:1,exp:0});
+    let succ, viaTool=false;
+    if (lp.learned){ succ = Math.min(0.99, 0.5 + lp.lv*0.05 - tier*0.07); }
+    else {
+      if (Systems.countItem('lockpick')<=0) return { ok:false, why:'未学「开锁」技能，也没有开锁器' };
+      Systems.removeItem('lockpick',1); viaTool=true; succ=[0.8,0.6,0.42,0.28][tier];
     }
-    // 开锁成功率（盗贼必成；其他人用开锁器后按品质有失败率）
-    let succ = isRogue ? 1 : [0.95,0.8,0.6,0.4][tier];
     if (!chance(succ)) return { ok:false, why:'开锁失败，宝箱锁死了。' };
     G.stats.chestsOpened++;
+    let lockUp=false;
+    if (lp.learned){ lp.exp += 1+tier; const need=lp.lv*6; if(lp.exp>=need && lp.lv<10){ lp.exp-=need; lp.lv++; lockUp=true; } }
     const lvl = (G.level||1);
     const gold = rand(lvl*4, lvl*16)*(tier+1);
     Systems.addGold(gold);
     const items=[];
     const nLoot = [1,1,2,2][tier];
-    const qualityFloor=['bronze','silver','gold','dark'][tier];
+    const lvBonus = lp.learned ? lp.lv*2 : 0;   // 开锁熟练度提升开出品质
     for(let i=0;i<nLoot;i++){
-      if (window.Items){ const inst=Items.gen(lvl,{luck:[5,15,30,50][tier]});
-        // 暗金箱保底品质
+      if (window.Items){ const inst=Items.gen(lvl,{luck:[5,15,30,50][tier]+lvBonus, forClass:G.classId});
         items.push(inst); Systems.addInstance(inst); }
     }
-    // 概率出宝石/幸运宝石
     if (chance(0.3+tier*0.15)){ Systems.addItem('lucky_gem',1); items.push({name:'幸运宝石',quality:'gold'}); }
+    // 宝箱可开出技能书
+    if (DATA.skillBookPool && chance(0.12+tier*0.06)){ const bid=DATA.skillBookPool[rand(0,DATA.skillBookPool.length-1)];
+      Systems.addItem(bid,1); items.push({name:DATA.items[bid].name, quality:DATA.items[bid].quality}); }
     Save.save();
-    return { ok:true, gold, items };
+    return { ok:true, gold, items, lockUp, lockLv:lp.lv };
   }
 
   // 命骰（致敬潘多拉之盒）

@@ -63,13 +63,15 @@
     if (G.mpCur < (sk.mpCost||0)) { Toast.show('法力不足'); return false; }
     G.mpCur -= (sk.mpCost||0);
     const e = sk.effect || {};
-    const base = (DATA.classes[G.classId].magic ? (G.sp||G.power) : G.power);
+    const profM = window.Skills ? Skills.profMul(id) : 1;   // 技能熟练度增益
+    const base = (DATA.classes[G.classId].magic ? (G.sp||G.power) : G.power) * profM;
 
     switch (e.kind) {
       case 'damage': {
         const dmg = computeDamage(base, e.mult||1, e.flat||0, e.guaranteedCrit, e.ignoreArmor);
         applyToEnemy(dmg, `你使用【${sk.name}】`);
         if (e.lifesteal) heal(Math.round(dmg.amount * e.lifesteal), '吸血');
+        if (e.steal && C.cur) { const g=Systems.rand(C.cur.level*2, C.cur.level*6); C.acc.gold+=g; pushLog('loot', `偷取 ${g} 铜币。`); }
         break;
       }
       case 'multi': {
@@ -123,6 +125,8 @@
       default: { const dmg=computeDamage(base,e.mult||1,e.flat||0,false); applyToEnemy(dmg,`你使用【${sk.name}】`); }
     }
     if (sk.cooldown) C.cooldowns[id] = sk.cooldown + 1; // +1 因本回合末会-1
+    const up = window.Skills && Skills.gainProf(id, 1);  // 技能练级
+    if (up) pushLog('sys', `技能【${sk.name}】熟练度提升至 Lv${up}！`);
     decCooldowns();
     return true;
   }
@@ -274,6 +278,15 @@
             theme: { armor: gl.themeArmor, weapons: gl.themeWeapons } });
           C.acc.genLoot.push(inst);
           pushLog('loot', `掉落：<span class="${DATA.qualities[inst.quality].cls}">${inst.name}</span>`);
+        }
+      }
+      // 彩蛋：超低爆率传说神器
+      if (DATA.eggItems && DATA.eggItems.length) {
+        const eggCh = dead.type==='boss'?0.004 : dead.type==='elite'?0.001 : 0.0002;
+        if (Math.random() < eggCh) {
+          const eid = DATA.eggItems[Systems.rand(0, DATA.eggItems.length-1)];
+          C.acc.loot[eid] = (C.acc.loot[eid]||0)+1;
+          pushLog('loot', `✨✨✨ 天降彩蛋！获得传说神器【${DATA.items[eid].name}】！`);
         }
       }
     }

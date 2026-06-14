@@ -98,7 +98,17 @@
     equipBag(i){ const r=Systems.equip(i); if(r&&r.ok){ Save.save(); CM(); render(); T('已装备'); } else T((r&&r.why)||'无法装备'); },
     unequip(slot){ Systems.unequip(slot); Save.save(); CM(); render(); T('已卸下'); },
     useBag(i){ const it=G.bag[i]; if(!it) return; const d=DATA.items[it.id]; if(!d||!d.use) return;
-      const u=d.use; if(u.hp) G.hpCur=Math.min(G.maxHp,G.hpCur+u.hp); if(u.hpPct) G.hpCur=Math.min(G.maxHp,G.hpCur+Math.round(G.maxHp*u.hpPct));
+      const u=d.use;
+      if(u.learnSkill || u.learnLife){   // 技能书：学习
+        if(d.classReq && d.classReq!==G.classId){ T('职业不符，无法学习此技能书'); return; }
+        const res = u.learnSkill ? Skills.learnBook(u.learnSkill) : Skills.learnLife(u.learnLife);
+        if(res==='have'){ T('你已掌握该技能'); return; }
+        if(!res){ T('无法学习'); return; }
+        Systems.removeItem(it.id,1); Save.save(); CM(); render();
+        T('习得：'+(u.learnSkill?DATA.skills[u.learnSkill].name:'开锁'));
+        return;
+      }
+      if(u.hp) G.hpCur=Math.min(G.maxHp,G.hpCur+u.hp); if(u.hpPct) G.hpCur=Math.min(G.maxHp,G.hpCur+Math.round(G.maxHp*u.hpPct));
       if(u.mp) G.mpCur=Math.min(G.maxMp,G.mpCur+u.mp); Systems.removeItem(it.id,1); Save.save(); CM(); render(); T('已使用 '+d.name); },
     sellBag(i){ const g=Systems.sell(i); if(g){ Save.save(); CM(); render(); T('卖出，获得 '+ (g)+' 铜币'); } },
     bulkSell(kind){ const p=Systems.bulkSellPreview(kind);
@@ -134,6 +144,7 @@
     // ===== 野外探索 =====
     exploreZone(zoneId){
       const z=DATA.zones[zoneId]; if(!z){ T('无此区域'); return; }
+      CM(); // 点击随机事件选项后关闭弹窗
       const ev=Events.maybeEvent(z);
       if(ev && ev.type!=='ambush'){ this._handleEvent(ev, zoneId); return; }
       const monster = ev && ev.type==='ambush' ? ev.monster : Events.encounter(z);
@@ -150,8 +161,9 @@
       if(ev.type==='omen'){ /* 预兆：临时鼓舞，下一场战斗略增益（简化为回满） */ Systems.fullHeal(); UI.renderStatus(); }
       let inner='';
       if(ev.type==='chest'){
-        const rogue=G.classId==='rogue';
-        inner=`<div class="btns"><button class="primary" onclick="Act.openChest(${ev.tier},${rogue?false:true},'${zoneId}')">${rogue?'潜行开锁':'用开锁器开启'}</button>
+        const lp=G.lockpick||{learned:false,lv:1};
+        const label = lp.learned ? `开锁（熟练Lv${lp.lv}）` : (Systems.countItem('lockpick')>0?'用开锁器开启':'开锁（需技能/开锁器）');
+        inner=`<div class="btns"><button class="primary" onclick="Act.openChest(${ev.tier},'${zoneId}')">${label}</button>
           <button class="ghost" onclick="Act.exploreZone('${zoneId}')">无视它</button></div>`;
       } else if(ev.type==='shrine'){
         inner=`<div class="btns"><button class="primary" onclick="Act.rollDice('${zoneId}')">🎲 投掷命骰</button>${cont}</div>`;
@@ -161,11 +173,11 @@
       } else { inner=`<div class="btns">${cont}</div>`; }
       M(`<h3>🌟 奇遇</h3><div class="narr">${UI.esc(ev.text)}</div>${inner}`);
     },
-    openChest(tier, viaLock, zoneId){
-      const r=Events.openChest(tier, viaLock);
+    openChest(tier, zoneId){
+      const r=Events.openChest(tier);
       if(!r.ok){ T(r.why); return; }
-      const loot=(r.items||[]).map(it=>`<div>${it.gen?UI.itemName(it):UI.esc(it.name)}</div>`).join('');
-      M(`<h3 class="q-gold">开启成功！</h3><div class="narr">获得 ${UI.money(r.gold)}<br>${loot}</div>
+      const loot=(r.items||[]).map(it=>`<div>${it.gen?UI.itemName(it):'<span class="'+UI.qcls(it.quality)+'">'+UI.esc(it.name)+'</span>'}</div>`).join('');
+      M(`<h3 class="q-gold">开启成功！</h3><div class="narr">获得 ${UI.money(r.gold)}<br>${loot}${r.lockUp?`<br><b class="q-gold">开锁熟练度提升至 Lv${r.lockLv}！</b>`:''}</div>
         <div class="btns"><button class="primary" onclick="Act.exploreZone('${zoneId}')">继续探索</button><button class="ghost" onclick="UI.closeModal();UI.go('zonelist')">返回</button></div>`);
       UI.renderStatus();
     },
@@ -265,13 +277,14 @@
 
     // ===== 命骰 =====
     rollDice(zoneId){
-      const cost = 300 * ((G.stats.diceRolls||0)+1);   // 每次献祭费用递增，杜绝无限投
-      if(G.gold < cost){ T(`需向神龛献祭 ${cost} 铜币（铜币不足）`); return; }
-      Systems.addGold(-cost); G.stats.diceRolls=(G.stats.diceRolls||0)+1;
+      const free = !!zoneId;   // 探索中的神龛奇遇免费；城镇神龛需献祭递增铜币
+      const cost = free ? 0 : 300 * ((G.stats.diceRolls||0)+1);
+      if(!free){ if(G.gold < cost){ T(`需向神龛献祭 ${cost} 铜币（铜币不足）`); return; }
+        Systems.addGold(-cost); G.stats.diceRolls=(G.stats.diceRolls||0)+1; }
       const r=Events.rollDice();
       const cont=zoneId?`<button class="primary" onclick="Act.exploreZone('${zoneId}')">继续探索</button><button class="ghost" onclick="UI.closeModal();UI.go('town')">返回</button>`
         :`<button class="primary full" onclick="UI.closeModal();UI.render()">好</button>`;
-      M(`<h3>🎲 命骰</h3><p class="tiny dim">已献祭 ${cost} 铜币。</p><div class="narr">${UI.esc(r.text)}</div><div class="btns">${cont}</div>`);
+      M(`<h3>🎲 命骰</h3>${free?'<p class="tiny dim">神龛奇遇·免费</p>':`<p class="tiny dim">已献祭 ${cost} 铜币。</p>`}<div class="narr">${UI.esc(r.text)}</div><div class="btns">${cont}</div>`);
       UI.renderStatus();
     },
 

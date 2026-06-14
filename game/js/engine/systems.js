@@ -339,6 +339,25 @@
     },
     list() { return G.skills.map(id => DATA.skills[id]).filter(Boolean); },
     actives() { return this.list().filter(s => s.type === 'active'); },
+    // 技能熟练度/练级：用技能积累熟练度，升级增强威力（上限10级）
+    profLv(id){ const p=(G.skillProf||{})[id]; return (p&&p.lv)||1; },
+    profMul(id){ return 1 + (this.profLv(id)-1)*0.03; },   // 每级 +3% 威力，10级 +27%
+    gainProf(id, amt){
+      G.skillProf = G.skillProf||{};
+      const p = G.skillProf[id] = G.skillProf[id]||{lv:1,exp:0};
+      if(p.lv>=10) return false;
+      p.exp += amt||1; const need = p.lv*8;
+      if(p.exp>=need){ p.exp-=need; p.lv++; return p.lv; }
+      return false;
+    },
+    // 技能书习得
+    learnBook(skillId){
+      if(!DATA.skills[skillId]) return false;
+      if(G.skills.indexOf(skillId)>=0 || (G.bookSkills||[]).indexOf(skillId)>=0) return 'have';
+      G.learned[skillId]=true; G.skills.push(skillId); G.bookSkills=G.bookSkills||[]; G.bookSkills.push(skillId);
+      recompute(); return true;
+    },
+    learnLife(name){ if(name==='lockpick'){ G.lockpick=G.lockpick||{learned:false,lv:1,exp:0}; if(G.lockpick.learned) return 'have'; G.lockpick.learned=true; return true; } return false; },
     passives() { return this.list().filter(s => s.type === 'passive'); },
     nextUnlock() {
       const cls = DATA.classes[G.classId];
