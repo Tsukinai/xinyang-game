@@ -41,8 +41,34 @@ for(const cls in SIG){
       type: s.slot==='weapon' ? DATA.weaponTypes[cg.weapons[0]] : DATA.armorTypes[cg.armor],
       weaponType: s.slot==='weapon' ? cg.weapons[0] : undefined,
       armorType: s.slot==='chest' ? cg.armor : undefined,
-      classes:[cls], stats:s.stats, value:tier*200, icon: s.slot==='weapon'?'🗡️':'🦺',
-      desc:`${DATA.classes[cls].name}专属神装（${tier===50?'一转':'二转'}）。${LORE[cls]}`,
+      classes:[cls], set:cls+'_set', stats:s.stats, value:tier*200, icon: s.slot==='weapon'?'🗡️':'🦺',
+      desc:`${DATA.classes[cls].name}专属神装（${tier===50?'一转':'二转'}）·【${DATA.advNames[cls][100]}套装】组件。${LORE[cls]}`,
     };
   }
+}
+
+// ---------- 套装：双件特殊效果 + 套装技能 ----------
+Object.assign(DATA.skills, {
+  set_rogue:{name:'影舞·千幻',icon:'🌌',type:'active',reqLevel:1,mpCost:40,cooldown:5,desc:'套装技能：分化千道幻影绕背连刺，四连击且必定暴击。',effect:{kind:'multi',hits:4,mult:1.5,guaranteedCrit:true}},
+  set_warrior:{name:'永恒·黑龙怒斩',icon:'🐲',type:'active',reqLevel:1,mpCost:45,cooldown:5,desc:'套装技能：召金甲巨神一斩，造成 380% 伤害并眩晕。',effect:{kind:'stun',mult:3.8,stunTurns:1}},
+  set_mage:{name:'格瑞玛·元素崩裂',icon:'🌋',type:'active',reqLevel:1,mpCost:55,cooldown:5,desc:'套装技能：引动元素本源崩裂，造成 430% 法术伤害。',effect:{kind:'damage',mult:4.3}},
+  set_priest:{name:'女神·圣恩普照',icon:'🕊️',type:'active',reqLevel:1,mpCost:45,cooldown:4,desc:'套装技能：女神圣恩普照，巨量治疗自身。',effect:{kind:'heal',healMult:5.2,flat:300}},
+  set_paladin:{name:'守护·辉煌审判',icon:'⚖️',type:'active',reqLevel:1,mpCost:50,cooldown:5,desc:'套装技能：辉煌圣光审判，360% 伤害并汲取生命。',effect:{kind:'damage',mult:3.6,lifesteal:0.35}},
+  set_hunter:{name:'索伦斯·箭暴',icon:'🌠',type:'active',reqLevel:1,mpCost:48,cooldown:5,desc:'套装技能：索伦斯之翼倾泻箭暴，六连击。',effect:{kind:'multi',hits:6,mult:1.15}},
+});
+const SET_STATS = {
+  rogue:{agi:50,crit:8,hp:600}, warrior:{str:50,sta:40,armor:120,hp:1200},
+  mage:{int:55,sp:90,crit:6}, priest:{spi:55,int:30,hp:900},
+  paladin:{str:45,sta:45,armor:140,hp:1200}, hunter:{agi:55,crit:8,hp:700},
+};
+const STATNAME={str:'力量',agi:'敏捷',int:'智力',sta:'体质',spi:'精神',atk:'攻击',sp:'法强',armor:'护甲',hp:'生命',crit:'暴击%'};
+DATA.sets = DATA.sets || {};
+for(const cls in DATA.advNames){
+  const sk=DATA.skills['set_'+cls]; const st=SET_STATS[cls];
+  const statDesc=Object.keys(st).map(k=>(STATNAME[k]||k)+'+'+st[k]).join('、');
+  DATA.sets[cls+'_set'] = {
+    name: DATA.advNames[cls][100]+'套装', cls,
+    pieces:[cls+'_sig50', cls+'_sig100'],
+    bonus:{ 2:{ stats:st, skill:'set_'+cls, desc:`集齐2件：${statDesc}；习得套装技能【${sk.name}】` } },
+  };
 }

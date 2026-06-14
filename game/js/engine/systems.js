@@ -41,12 +41,39 @@
     return s;
   }
 
+  // ===== 套装：统计已装备套装件数与生效加成 =====
+  function equippedSetCounts() {
+    const c = {};
+    for (const slot in G.equip) { const it=G.equip[slot]; if(!it) continue;
+      const def = window.Items ? Items.def(it) : DATA.items[it.id];
+      if (def && def.set) c[def.set] = (c[def.set]||0)+1;
+    }
+    return c;
+  }
+  function setBonuses() {
+    const counts = equippedSetCounts(); const stats={}, skills=[], info=[];
+    for (const sid in counts) { const set=(DATA.sets||{})[sid]; if(!set) continue; const n=counts[sid];
+      for (const thr in (set.bonus||{})) { const b=set.bonus[thr]; const on = n>=(+thr);
+        if (on) { if(b.stats) for(const k in b.stats) stats[k]=(stats[k]||0)+b.stats[k];
+          if(b.skill && skills.indexOf(b.skill)<0) skills.push(b.skill); }
+        info.push({ name:set.name, thr:+thr, have:n, total:(set.pieces||[]).length, desc:b.desc, active:on });
+      }
+    }
+    return { stats, skills, info };
+  }
+
   // ===== 重算派生战斗属性 =====
   function recompute() {
     const cls = DATA.classes[G.classId];
     const a = finalAttr();
+    const setB = setBonuses();
+    // 套装属性加成（先并入主属性，再驱动派生）
+    for (const k of ['str','agi','int','sta','spi']) if (setB.stats[k]) a[k] = (a[k]||0) + setB.stats[k];
     G.attr = a;
-    let atk=0, sp=0, armor=0, hp=0, mp=0, crit=0, dodge=0, haste=0;
+    G.setSkills = setB.skills;
+    G.activeSets = setB.info;
+    let atk=setB.stats.atk||0, sp=setB.stats.sp||0, armor=setB.stats.armor||0, hp=setB.stats.hp||0,
+        mp=setB.stats.mp||0, crit=setB.stats.crit||0, dodge=setB.stats.dodge||0, haste=setB.stats.haste||0;
     for (const slot in G.equip) { const it=G.equip[slot]; if(!it) continue;
       const st=itemStats(it);
       atk+=st.atk||0; sp+=st.sp||0; armor+=st.armor||0; hp+=st.hp||0; mp+=st.mp||0;
@@ -253,6 +280,36 @@
     return { ok:true };
   }
 
+  // ===== 一键售卖 =====
+  // kind: 'nonclass'(非本职业可用装备) | 'lowlevel'(需求等级≤当前-8的低级装备)
+  function _bulkMatch(kind, def){
+    if (!def || !def.slot || !def.value) return false;       // 仅可装备且有价值的装备
+    if (def.classes && DATA.canClassUse && DATA.canClassUse(def, G.classId)) {
+      // 本职业专属神装：低级判定也保护（不误卖）
+      if (kind==='lowlevel') return false;
+    }
+    if (kind==='nonclass') return DATA.canClassUse && !DATA.canClassUse(def, G.classId);
+    if (kind==='lowlevel') return def.reqLevel && def.reqLevel <= G.level - 8;
+    return false;
+  }
+  function bulkSellPreview(kind){
+    let gold=0,count=0;
+    for (const it of G.bag){ const def = window.Items?Items.def(it):DATA.items[it.id];
+      if(!_bulkMatch(kind,def)) continue;
+      gold += Math.max(1, Math.round(def.value*0.25)) * (it.qty||1); count++;
+    }
+    return { count, gold };
+  }
+  function bulkSell(kind){
+    let gold=0,count=0;
+    for (let i=G.bag.length-1;i>=0;i--){ const it=G.bag[i]; const def = window.Items?Items.def(it):DATA.items[it.id];
+      if(!_bulkMatch(kind,def)) continue;
+      gold += Math.max(1, Math.round(def.value*0.25)) * (it.qty||1); count++; G.bag.splice(i,1);
+    }
+    if(count) addGold(gold);
+    return { count, gold };
+  }
+
   // ===== 工具 =====
   function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
   function uid(){ return (G.__uc=(G.__uc||0)+1); }
@@ -262,7 +319,8 @@
     LEVEL_CAP, xpToNext, recompute, fullHeal, restTick, gainXp, levelUp,
     allocate, resetAlloc, addItem, addInstance, removeItem, countItem, equip, unequip, canEquip,
     addGold, buy, sell, rollLoot, itemStats, finalAttr, rand, qualityRank, QUALITY_ORDER,
-    enhance, socketGem, socketCount,
+    enhance, socketGem, socketCount, setBonuses, equippedSetCounts,
+    bulkSell, bulkSellPreview,
   };
 
   // ===================== 技能 =====================

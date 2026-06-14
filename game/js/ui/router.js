@@ -101,6 +101,12 @@
       const u=d.use; if(u.hp) G.hpCur=Math.min(G.maxHp,G.hpCur+u.hp); if(u.hpPct) G.hpCur=Math.min(G.maxHp,G.hpCur+Math.round(G.maxHp*u.hpPct));
       if(u.mp) G.mpCur=Math.min(G.maxMp,G.mpCur+u.mp); Systems.removeItem(it.id,1); Save.save(); CM(); render(); T('已使用 '+d.name); },
     sellBag(i){ const g=Systems.sell(i); if(g){ Save.save(); CM(); render(); T('卖出，获得 '+ (g)+' 铜币'); } },
+    bulkSell(kind){ const p=Systems.bulkSellPreview(kind);
+      if(p.count<=0){ T(kind==='nonclass'?'没有非本职业装备':'没有低级装备可卖'); return; }
+      const label=kind==='nonclass'?'非本职业装备':'低级装备(需求等级≤'+(G.level-8)+')';
+      M(`<h3>一键售卖</h3><div class="narr">将卖出 <b>${p.count}</b> 件${label}，获得约 <b>${UI.money(p.gold)}</b>。<br><span class="tiny dim">本职业专属神装不会被卖出。</span></div>
+        <div class="btns"><button class="danger" onclick="Act.doBulkSell('${kind}')">确认卖出</button><button class="ghost" onclick="UI.closeModal()">取消</button></div>`); },
+    doBulkSell(kind){ const r=Systems.bulkSell(kind); Save.save(); CM(); render(); T(`卖出 ${r.count} 件，获得 ${UI.money(r.gold)}`); },
 
     // ===== 商店 =====
     buy(id){ const r=Systems.buy(id); if(r.ok){ Save.save(); render(); T('购买成功 -'+r.price+'铜'); } else T(r.why); },
@@ -210,7 +216,7 @@
     toggleAuto(){ UI.state.auto=!UI.state.auto; UI.state._keepScroll=true; render(); if(UI.state.auto) this._autoTick(); },
     autoOff(){ UI.state.auto=false; if(UI.state._autoTimer){ clearTimeout(UI.state._autoTimer); UI.state._autoTimer=null; } },
     _aiPick(){
-      const acts=(G.skills||[]).map(id=>({id,s:DATA.skills[id]})).filter(x=>x.s&&x.s.type==='active'&&G.mpCur>=(x.s.mpCost||0)&&Combat.cooldown(x.id)===0);
+      const acts=(G.skills||[]).concat(G.setSkills||[]).map(id=>({id,s:DATA.skills[id]})).filter(x=>x.s&&x.s.type==='active'&&G.mpCur>=(x.s.mpCost||0)&&Combat.cooldown(x.id)===0);
       const heal=acts.find(x=>x.s.effect.kind==='heal');
       // 血量危急：优先治疗技能 → 否则喝药
       if(G.hpCur<G.maxHp*0.4){

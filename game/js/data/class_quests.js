@@ -34,12 +34,7 @@ DATA.classes.priest.skills.push('p_divineheal','p_divinegrace');
 DATA.classes.paladin.skills.push('pal_guardward','pal_judgeblade');
 DATA.classes.hunter.skills.push('h_beastward','h_starfall');
 
-// ---------- 转职名映射 ----------
-DATA.advNames = {
-  rogue:{50:'大盗贼',100:'影舞'}, warrior:{50:'大剑士',100:'神武士'},
-  mage:{50:'大法师',100:'魔导师'}, priest:{50:'高阶牧师',100:'神牧'},
-  paladin:{50:'圣殿骑士',100:'守护骑士'}, hunter:{50:'精灵游侠',100:'神射手'},
-};
+// ---------- 转职名映射 DATA.advNames 已在 gear_types.js 提前定义 ----------
 
 // ---------- 任务链定义（数据驱动批量生成）----------
 const CHAINS = {

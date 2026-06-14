@@ -103,6 +103,7 @@
       <div class="card"><div class="stats">${combat.map(([n,v])=>`<div class="s"><span>${n}</span><b>${v}</b></div>`).join('')}</div></div>
       <h3 class="sub">称号</h3><div class="card">${titles}</div>
       <h3 class="sub">秩序之章 · 第一卷</h3><div class="card">${order}<div class="tiny dim" style="margin-top:5px">集齐六章可推进教皇之路。</div></div>
+      ${(G.activeSets&&G.activeSets.length)?`<h3 class="sub">套装</h3><div class="card">${G.activeSets.map(s=>`<div class="kv"><span class="${s.active?'q-gold':'dim'}">${E(s.name)} (${s.have}/${s.total})</span></div><div class="tiny ${s.active?'q-gold':'dim'}">${s.active?'✓ ':'　'}${E(s.desc)}</div>`).join('')}</div>`:''}
       <div class="btns"><button class="ghost" onclick="Act.exportSave()">导出存档码</button><button class="ghost" onclick="Act.wipeConfirm()">删档重来</button></div>`;
   }
 
@@ -120,16 +121,22 @@
           <div>${iname(it)}${it.qty>1?` <span class="dim tiny">×${it.qty}</span>`:''}
           <div class="ds">${E(d.type||'')}${d.slot?' · '+(DATA.slots[d.slot]||''):''}</div></div></div></div>`;
     }).join('')||'<div class="empty">背包空空如也</div>';
+    const pNon=Systems.bulkSellPreview('nonclass'), pLow=Systems.bulkSellPreview('lowlevel');
     return `<h2 class="title">🎒 背包与装备<small>${money(G.gold)}</small></h2>
       <h3 class="sub">已装备</h3><div class="list">${eq}</div>
-      <h3 class="sub">背包（${(G.bag||[]).length}）</h3><div class="list">${items}</div>`;
+      <h3 class="sub">背包（${(G.bag||[]).length}）</h3>
+      <div class="btns">
+        <button class="ghost" onclick="Act.bulkSell('nonclass')">一键卖·非本职业(${pNon.count})</button>
+        <button class="ghost" onclick="Act.bulkSell('lowlevel')">一键卖·低级装备(${pLow.count})</button>
+      </div>
+      <div class="list">${items}</div>`;
   }
   function slotIcon(s){ return ({weapon:'🗡️',offhand:'🛡️',head:'⛑️',shoulder:'🧣',chest:'🦺',hand:'🧤',waist:'🩹',legs:'👖',feet:'👢',cloak:'🧥',neck:'📿',ring1:'💍',ring2:'💍',trinket:'🎖️'})[s]||'📦'; }
 
   // ============ 技能 ============
   function skills(){
     const cls=DATA.classes[G.classId];
-    const learned=(G.skills||[]).map(id=>{ const s=DATA.skills[id]; if(!s) return '';
+    const learned=(G.skills||[]).concat(G.setSkills||[]).map(id=>{ const s=DATA.skills[id]; if(!s) return '';
       return `<div class="skill-row"><span class="si">${s.icon||'✨'}</span><div class="sd">
         <div class="snm">${E(s.name)} <span class="tiny dim">${s.type==='passive'?'被动':'Lv'+(s.reqLevel||1)+' · '+cls.resource+(s.mpCost||0)+(s.cooldown?' · CD'+s.cooldown:'')}</span></div>
         <div class="sde">${E(s.desc)}</div></div></div>`; }).join('');
@@ -201,7 +208,7 @@
     const statusE=e?[(e.stun>0?'😵眩晕':''),...(e.dots||[]).map(d=>'🩸'+d.name),...(e.debuffs||[]).map(d=>'⬇'+d.name)].filter(Boolean).join(' '):'';
     const statusP=[...(st.pBuffs||[]).map(b=>'⬆'+b.name),(st.pShield>0?'🛡️护盾'+st.pShield:''),(st.pStun>0?'😵被控':'')].filter(Boolean).join(' ');
     // 技能按钮
-    const skBtns=(G.skills||[]).map(id=>{ const s=DATA.skills[id]; if(!s||s.type!=='active') return '';
+    const skBtns=(G.skills||[]).concat(G.setSkills||[]).map(id=>{ const s=DATA.skills[id]; if(!s||s.type!=='active') return '';
       const cd=Combat.cooldown(id); const noMp=G.mpCur<(s.mpCost||0);
       const dis=cd>0||noMp;
       return `<button ${dis?'disabled':''} onclick="Act.cSkill('${id}')" title="${E(s.desc)}">

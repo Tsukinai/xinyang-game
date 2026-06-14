@@ -27,6 +27,13 @@ DATA.classGear = {
 DATA.weaponStat = { dagger:'agi', sword:'str', greatsword:'str', staff:'int', mace:'str', bow:'agi' };
 DATA.armorStat  = { cloth:'int', leather:'agi', plate:'str' };
 
+// 转职名映射（一转/二转·终极职业）—— 提前定义，供装备/套装/职业任务共用
+DATA.advNames = {
+  rogue:{50:'大盗贼',100:'影舞'}, warrior:{50:'大剑士',100:'神武士'},
+  mage:{50:'大法师',100:'魔导师'}, priest:{50:'高阶牧师',100:'神牧'},
+  paladin:{50:'圣殿骑士',100:'守护骑士'}, hunter:{50:'精灵游侠',100:'神射手'},
+};
+
 // 判断职业能否穿戴某装备定义
 DATA.canClassUse = function(def, classId){
   if(!def) return false;
