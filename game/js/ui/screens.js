@@ -290,12 +290,12 @@
 
   // ============ 命骰 ============
   function diceScreen(){
-    const dcost=300*((G.stats.diceRolls||0)+1);
-    return `<h2 class="title">🎲 神龛 · 命骰<small>已投 ${G.stats.diceRolls||0} 次</small></h2>
+    const rem=Act.diceRemain(); const ready=rem<=0;
+    return `<h2 class="title">🎲 神龛 · 命骰</h2>
       <div class="narr">古老的神龛前，投掷命骰祈求命运，结果或喜或悲。
-每次需向神龛**献祭铜币**（费用随投掷次数递增），以免亵渎命运。
+神龛每隔一段时间允许免费投掷一次（约 10 分钟）。
 （2-3点厄运，4-9平庸，10-11吉，12大吉）</div>
-      <div class="btns"><button class="primary full" onclick="Act.rollDice()">🎲 投掷命骰（献祭 ${dcost} 铜）</button></div>
+      <div class="btns"><button class="primary full" ${ready?'':'disabled'} onclick="Act.rollDice()">${ready?'🎲 免费投掷命骰':`冷却中：约 ${Math.ceil(rem/60000)} 分钟后免费`}</button></div>
       ${Systems.countItem('cursed_skull')>0?`<div class="narr" style="border-left-color:#b65cff">你持有【被诅咒的骷髅】×${Systems.countItem('cursed_skull')}。捏碎它将投掷三次命骰——大喜大悲，由命运裁决。</div>
         <div class="btns"><button class="danger full" onclick="Act.fateRoll()">💀 捏碎骷髅·三连命骰</button></div>`:''}
       <div class="btns"><button class="ghost full" onclick="Act.go('town')">离开</button></div>`;

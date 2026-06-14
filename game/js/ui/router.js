@@ -276,16 +276,20 @@
       if(r.ok){ Save.save(); this.forgeItem(slot); UI.renderStatus(); T('镶嵌成功'); } else T(r.why); },
 
     // ===== 命骰 =====
+    DICE_CD: 10*60*1000,   // 城镇神龛免费命骰冷却（10 分钟）
+    diceRemain(){ const now=Date.now(); const last=G.lastFreeDice||0; return Math.max(0, this.DICE_CD-(now-last)); },
     rollDice(zoneId){
-      const free = !!zoneId;   // 探索中的神龛奇遇免费；城镇神龛需献祭递增铜币
-      const cost = free ? 0 : 300 * ((G.stats.diceRolls||0)+1);
-      if(!free){ if(G.gold < cost){ T(`需向神龛献祭 ${cost} 铜币（铜币不足）`); return; }
-        Systems.addGold(-cost); G.stats.diceRolls=(G.stats.diceRolls||0)+1; }
+      const fromShrine = !!zoneId;   // 探索神龛奇遇：随时免费；城镇神龛：每隔一段时间免费一次
+      if(!fromShrine){
+        const rem=this.diceRemain();
+        if(rem>0){ T(`免费命骰冷却中，约 ${Math.ceil(rem/60000)} 分钟后可再投`); return; }
+        G.lastFreeDice = Date.now();
+      }
       const r=Events.rollDice();
       const cont=zoneId?`<button class="primary" onclick="Act.exploreZone('${zoneId}')">继续探索</button><button class="ghost" onclick="UI.closeModal();UI.go('town')">返回</button>`
         :`<button class="primary full" onclick="UI.closeModal();UI.render()">好</button>`;
-      M(`<h3>🎲 命骰</h3>${free?'<p class="tiny dim">神龛奇遇·免费</p>':`<p class="tiny dim">已献祭 ${cost} 铜币。</p>`}<div class="narr">${UI.esc(r.text)}</div><div class="btns">${cont}</div>`);
-      UI.renderStatus();
+      M(`<h3>🎲 命骰</h3><p class="tiny dim">${fromShrine?'神龛奇遇·免费':'本次免费命骰已使用'}</p><div class="narr">${UI.esc(r.text)}</div><div class="btns">${cont}</div>`);
+      UI.renderStatus(); Save.save();
     },
 
     // ===== 生活技能 =====
