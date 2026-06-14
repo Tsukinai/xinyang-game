@@ -1,0 +1,10 @@
+# 原著文本（版权材料）与生成的中间数据，不入库
+《重生之贼行天下》（校对版全本）作者：发飙的蜗牛.txt
+novel_utf8.txt
+extract_data.json
+digest_*.txt
+audit_*.txt
+.DS_Store
+.playwright-mcp/
+shot-*.png
+shot-*.jpeg

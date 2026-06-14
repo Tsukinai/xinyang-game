@@ -1,0 +1,76 @@
+/* quests.js —— 任务
+ * {id,name,type:'main'|'side'|'hidden'|'class', cityId, giver, reqLevel, prereq:[id], desc,
+ *  objective:{kind:'kill'|'collect'|'reach'|'talk'|'clear', target, count?, label},
+ *  rewards:{xp,gold,items:[{id,qty}],rep:{city:n},title,orderChapter,unlockFlag,unlockCity}}
+ */
+window.DATA = window.DATA || {};
+
+DATA.quests = {
+  // ===== 特拉克新手 =====
+  q_rats:{ id:'q_rats', name:'鼠患', type:'side', cityId:'tracker', giver:'农民恩德', reqLevel:1,
+    desc:'巨鼠啃食庄稼，农民恩德请你清剿五十只银灰巨鼠。',
+    objective:{kind:'kill',target:'rat',count:20,label:'击杀银灰巨鼠'},
+    rewards:{xp:120,gold:15,items:[{id:'potion_hp_s',qty:3}]} },
+  q_skulls:{ id:'q_skulls', name:'收集巨鼠头骨', type:'side', cityId:'tracker', giver:'猎人克劳斯', reqLevel:2,
+    desc:'猎人克劳斯需要二十个银灰巨鼠头骨做研究。',
+    objective:{kind:'collect',target:'rat_skull',count:15,label:'银灰巨鼠头骨'},
+    rewards:{xp:160,gold:25} },
+  q_ratfield_hidden:{ id:'q_ratfield_hidden', name:'【隐藏】奥尔的委托', type:'hidden', cityId:'tracker', giver:'药剂师奥尔', reqLevel:2,
+    desc:'隐藏NPC药剂师奥尔需要二十一条巨鼠尾巴，奖励远超普通任务。',
+    objective:{kind:'collect',target:'rat_tail',count:21,label:'银灰巨鼠尾巴'},
+    rewards:{xp:400,gold:60,items:[{id:'potion_hp_m',qty:3}]} },
+  q_main_tracker:{ id:'q_main_tracker', name:'【主线】勇士的试炼', type:'main', cityId:'tracker', giver:'各职业训练师', reqLevel:4,
+    desc:'踏上冒险者之路的第一步——通关特拉克小镇外的勇士墓穴。',
+    objective:{kind:'clear',target:'d_tomb',label:'通关勇士墓穴'},
+    rewards:{xp:400,gold:40,items:[{id:'scroll_tp',qty:2}]} },
+
+  // ===== 希尔顿要塞 =====
+  q_bat_teeth:{ id:'q_bat_teeth', name:'【隐藏】铁匠卡迪的收购', type:'hidden', cityId:'hilton', giver:'铁匠卡迪', reqLevel:3,
+    desc:'前线急需武器物资，铁匠卡迪无限量收购蝙蝠牙齿。',
+    objective:{kind:'collect',target:'bat_tooth',count:20,label:'蝙蝠牙齿'},
+    rewards:{xp:300,gold:120} },
+  q_silk:{ id:'q_silk', name:'【隐藏】医师布莱文斯的精丝', type:'hidden', cityId:'hilton', giver:'医师布莱文斯', reqLevel:8,
+    desc:'答对了垂钓老者的哲学问题，他托你收集然多湖的精丝，助他回到希尔顿要塞。',
+    objective:{kind:'collect',target:'fine_silk',count:30,label:'精丝'},
+    rewards:{xp:1600,gold:80,items:[{id:'feather_step',qty:1}],rep:{hilton:11}} },
+  q_treant_main:{ id:'q_treant_main', name:'【主线】夺回伊恩帕特之笛', type:'main', cityId:'hilton', giver:'督军卡瓦罗特', reqLevel:10,
+    desc:'黑精灵卓尔部落偷走伊恩帕特之笛，使树妖林大乱。进入树妖林，杀掉为害最深的失控树妖王。',
+    objective:{kind:'clear',target:'d_treant',label:'通关树妖林'},
+    rewards:{xp:3000,gold:200,items:[{id:'courage_armor',qty:1}],rep:{hilton:12,caroll:10}} },
+  q_order_courage:{ id:'q_order_courage', name:'【隐藏】搜寻勇气之章', type:'hidden', cityId:'hilton', giver:'探索触发', reqLevel:13, prereq:['q_treant_main'],
+    desc:'经岩石蜘蛛洞穴深处的封闭山谷，触摸共治编年体——勇气之章扉页就在树妖王守护之下。',
+    objective:{kind:'clear',target:'d_treant',label:'再度通关树妖林（专家级触发）'},
+    rewards:{xp:4000,gold:150,orderChapter:'勇气',title:'勇气持有者'} },
+
+  // ===== 卡罗尔城 =====
+  q_castle_skeleton:{ id:'q_castle_skeleton', name:'伯爵克尔菲德的烦恼', type:'side', cityId:'caroll', giver:'伯爵克尔菲德', reqLevel:8,
+    desc:'卡罗尔城古堡花园闹起了骷髅，伯爵克尔菲德请你清剿。',
+    objective:{kind:'kill',target:'skeleton_g',count:8,label:'击杀骷髅角斗士'},
+    rewards:{xp:600,gold:100} },
+  q_thieves_stairs:{ id:'q_thieves_stairs', name:'【隐藏】愚蠢的奖励', type:'hidden', cityId:'caroll', giver:'盗贼公会·费伦长老', reqLevel:1,
+    desc:'放弃魔法电梯，徒步爬完盗贼公会主塔两千多级台阶到塔顶。第一个完成者获得「坚毅」。',
+    objective:{kind:'talk',target:'thieves_elder',label:'登顶盗贼公会主塔'},
+    rewards:{xp:200,title:'坚毅',items:[{id:'lucky_gem',qty:1}]} },
+  q_main_order:{ id:'q_main_order', name:'【主线】教皇之路', type:'main', cityId:'caroll', giver:'乔比亚大帝', reqLevel:15,
+    desc:'乔比亚大帝告知：散落世间的秩序之章共六卷三十六章，集齐者可重建神之秩序、成为伟大的教皇。第一卷六章为正义、善良、勇气、智慧、公正、自由。',
+    objective:{kind:'talk',target:'jobia',label:'聆听乔比亚大帝的启示'},
+    rewards:{xp:1000,title:'秩序追寻者',unlockFlag:'order_quest'} },
+
+  // ===== 永恒之城 / 沼泽 / 元素之城 =====
+  q_order_kindness:{ id:'q_order_kindness', name:'【隐藏】善良之章', type:'hidden', cityId:'eternal', giver:'探索触发', reqLevel:22,
+    desc:'秩序之章第一卷·善良之章，藏于索尼娅月光林地中央，由狼人布索的副本守护。',
+    objective:{kind:'clear',target:'d_soth',label:'通关索斯山谷'},
+    rewards:{xp:8000,gold:300,orderChapter:'善良'} },
+  q_order_freedom:{ id:'q_order_freedom', name:'【隐藏】自由之章', type:'hidden', cityId:'sogot', giver:'探索触发', reqLevel:15,
+    desc:'潜入索哥特古城核心，绕过亡灵领主取得石台上的自由之章。',
+    objective:{kind:'clear',target:'d_sogot',label:'通关索哥特壁垒'},
+    rewards:{xp:5000,gold:250,orderChapter:'自由'} },
+  q_abak_clue:{ id:'q_abak_clue', name:'寻找独裁者阿巴克的套装', type:'side', cityId:'sogot', giver:'卷轴大师戴维娜', reqLevel:30,
+    desc:'共治年代独裁者阿巴克的神装散落人间，传说其中一件与瘟疫沼泽的怨灵有关。',
+    objective:{kind:'kill',target:'swamp_undead',count:40,label:'清剿沼泽亡魂'},
+    rewards:{xp:12000,gold:500,items:[{id:'gem_sta',qty:1}]} },
+  q_main_zennard:{ id:'q_main_zennard', name:'【主线】圣灵之心', type:'main', cityId:'element', giver:'探索触发', reqLevel:48,
+    desc:'净化黑暗生物的尸骸积累神圣力量，方能解开罪域深处泽恩纳德之剑的封印，解救战神克罗。先击败水晶洞窟的地穴领主贝内特。',
+    objective:{kind:'clear',target:'d_crystal',label:'通关水晶洞窟'},
+    rewards:{xp:60000,gold:2000,items:[{id:'gem_crit',qty:1}],unlockFlag:'zennard_progress'} },
+};
