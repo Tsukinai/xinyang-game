@@ -38,8 +38,20 @@
     // 强化加成
     if (it.plus) { const m = it.plus; s.atk = (s.atk||0) + Math.round((def.stats&&def.stats.atk||0)*0.1*m);
       s.armor = (s.armor||0) + Math.round((def.stats&&def.stats.armor||0)*0.1*m); }
+    // 装备升级（突破）：每级整体 +12%，让装备跟上角色等级
+    if (it.upLv) { const mul = 1 + 0.12*it.upLv; for (const k in s) s[k] = Math.round(s[k]*mul); }
     return s;
   }
+  // 绑定：套装散件 / 唯一神器 / 神器品质 不可卖出
+  function isBound(it){ const def = (window.Items?Items.def(it):DATA.items[it.id]) || {};
+    return !!def.set || def.quality==='artifact' || (DATA.eggItems && DATA.eggItems.indexOf(it.id)>=0); }
+  // 装备升级（突破）：消耗金币提升装备等级，跟上人物成长
+  function gearUpCost(item){ const def=(window.Items?Items.def(item):DATA.items[item.id])||{}; const up=(item.upLv||0);
+    return Math.round((200 + (def.reqLevel||1)*40) * Math.pow(1.6, up)); }
+  function upgradeGear(item){ if(!item) return {ok:false,why:'无装备'};
+    const up=item.upLv||0; if(up>=10) return {ok:false,why:'已达升级上限 ✦10'};
+    const cost=gearUpCost(item); if(G.gold<cost) return {ok:false,why:`金币不足（需 ${cost}）`};
+    G.gold-=cost; item.upLv=up+1; recompute(); return {ok:true, upLv:item.upLv, cost}; }
 
   // ===== 套装：统计已装备套装件数与生效加成 =====
   function equippedSetCounts() {
@@ -263,6 +275,7 @@
   }
   function sell(bagIndex) {
     const it = G.bag[bagIndex]; if (!it) return false;
+    if (isBound(it)) return false;   // 绑定装备不可卖
     const def = window.Items ? Items.def(it) : DATA.items[it.id];
     const unit = def && def.value ? Math.max(1, Math.round(def.value*0.25)) : 1;
     const gain = unit * (it.qty||1);
@@ -285,11 +298,15 @@
   }
 
   // ===== 强化（幸运宝石砸级）=====
+  function enhanceCost(item){ const plus=(item&&item.plus)||0; return 80 + plus*plus*40; }   // 强化金币消耗（随+级递增）
   function enhance(item) {
     if (!item) return { ok:false, why:'无装备' };
     if (countItem('lucky_gem') <= 0) return { ok:false, why:'缺少幸运宝石' };
     const plus = item.plus || 0;
     if (plus >= 20) return { ok:false, why:'已达强化上限 +20' };
+    const cost = enhanceCost(item);
+    if (G.gold < cost) return { ok:false, why:`金币不足（需 ${cost}）` };
+    G.gold -= cost;
     removeItem('lucky_gem', 1);
     let rate, onFail;
     if (plus < 5) { rate = 0.6; onFail = () => { item.plus = Math.max(0, plus - 1); }; }
@@ -320,6 +337,7 @@
   // kind: 'nonclass'(非本职业可用装备) | 'lowlevel'(需求等级≤当前-8的低级装备)
   function _bulkMatch(kind, def){
     if (!def || !def.slot || !def.value) return false;       // 仅可装备且有价值的装备
+    if (def.set || def.quality==='artifact') return false;   // 套装散件/神器绑定，不参与一键卖
     // 本职业专属神装（带 classes 限定且本职业可用）：任何一键卖都保护
     const special = def.classes && DATA.canClassUse && DATA.canClassUse(def, G.classId);
     if (kind==='nonclass') return DATA.canClassUse && !DATA.canClassUse(def, G.classId);
@@ -365,7 +383,7 @@
     LEVEL_CAP, xpToNext, recompute, fullHeal, restTick, gainXp, levelUp,
     allocate, resetAlloc, addItem, addInstance, removeItem, countItem, equip, unequip, equipToSlot, autoEquipBest, canEquip,
     addGold, buy, sell, rollLoot, itemStats, finalAttr, rand, qualityRank, QUALITY_ORDER,
-    enhance, socketGem, socketCount, setBonuses, equippedSetCounts,
+    enhance, enhanceCost, isBound, gearUpCost, upgradeGear, socketGem, socketCount, setBonuses, equippedSetCounts,
     bulkSell, bulkSellPreview, statScore, powerScore,
   };
 

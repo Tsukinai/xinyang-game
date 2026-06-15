@@ -40,10 +40,11 @@
     let socket='';
     if (d.slot && window.Systems){ const sc=Systems.socketCount(it); const used=(it.gems||[]).length;
       if(sc) socket=`<div class="tiny dim">凹槽 ${used}/${sc}${(it.gems||[]).map(g=>' '+(DATA.items[g]?DATA.items[g].name:'')).join('')}</div>`; }
-    return `<div><b class="${qcls(d.quality)}">${esc(d.name)}${it&&it.plus?` +${it.plus}`:''}</b>
+    return `<div><b class="${qcls(d.quality)}">${esc(d.name)}${it&&it.plus?` +${it.plus}`:''}${it&&it.upLv?` <span class="q-gold">✦${it.upLv}</span>`:''}</b>
       <span class="tag ${qcls(d.quality)}">${qname(d.quality)}</span>
       ${d.slot?`<span class="tiny dim"> · ${DATA.slots[d.slot]||d.type||''}</span>`:''}
-      ${d.reqLevel?`<span class="tiny dim"> · 需求Lv${d.reqLevel}</span>`:''}</div>
+      ${d.reqLevel?`<span class="tiny dim"> · 需求Lv${d.reqLevel}</span>`:''}
+      ${window.Systems&&Systems.isBound&&Systems.isBound(it)?'<span class="tiny" style="color:#b65cff"> · 绑定</span>':''}</div>
       ${lines.length?`<div class="stats" style="grid-template-columns:1fr">${lines.join('')}</div>`:''}
       ${socket}
       ${d.desc?`<p class="tiny dim">${esc(d.desc)}</p>`:''}`;

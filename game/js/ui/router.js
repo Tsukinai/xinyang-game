@@ -61,8 +61,26 @@
         ${acHtml?'<h3 class="sub">进行中的职业任务</h3>'+acHtml:''}
         ${cqHtml?'<h3 class="sub">可领取</h3>'+cqHtml:'<p class="tiny dim">暂无可领取的职业任务（提升等级解锁转职试炼）。</p>'}
         <div class="btns"><button class="ghost full" onclick="UI.closeModal()">关闭</button></div>`); },
-    auction(){ M(`<h3>💰 拍卖行</h3><p class="dim">行情每日浮动。你可在背包中点击物品「卖出」即时变现；大宗拍卖系统将在后续版本开放。</p>
-      <div class="btns"><button class="full" onclick="UI.closeModal()">关闭</button></div>`); },
+    auction(){ if(!UI.state._auction) this.auctionRefresh(true); go('auction'); },
+    auctionRefresh(silent){ UI.state._auction=this._genAuction(); if(!silent){ UI.state._keepScroll=true; render(); T('🔄 行情已刷新'); } },
+    _genAuction(){
+      const lots=[]; const lvl=Math.max(8,G.level||1);
+      // 3 件唯一/传说神器（金币高价流通）
+      const uids=[...new Set(DATA.eggItems||[])].filter(id=>DATA.items[id]);
+      for(let i=0;i<3 && uids.length;i++){ const id=uids[Systems.rand(0,uids.length-1)]; const d=DATA.items[id];
+        const price=Math.round((d.reqLevel||1)*(d.reqLevel||1)*6 + (d.value||0)*3 + 2000);
+        lots.push({id, price}); }
+      // 3 件随机词缀装备（本职业可用，高幸运）
+      if(window.Items) for(let i=0;i<3;i++){ const inst=Items.gen(lvl,{luck:40,forClass:G.classId});
+        const price=Math.round((inst.reqLevel||1)*(inst.reqLevel||1)*5 + (inst.value||0)*4 + 600);
+        lots.push({inst, price}); }
+      return lots;
+    },
+    auctionBuy(idx){ const lots=UI.state._auction||[]; const lot=lots[idx]; if(!lot) return;
+      if(G.gold<lot.price){ T('金币不足'); return; }
+      Systems.addGold(-lot.price);
+      if(lot.id) Systems.addItem(lot.id,1); else if(lot.inst) Systems.addInstance(lot.inst);
+      lots.splice(idx,1); UI.state._keepScroll=true; Save.save(); render(); T('🛒 已拍下！进背包查看'); },
 
     talkNpc(npcId){
       const city=DATA.cities[G.cityId]; const npc=(city.npcs||[]).find(n=>n.id===npcId); if(!npc) return;
@@ -113,7 +131,8 @@
       else {
         if(d.use) btns.push(`<button class="primary" onclick="Act.useBag(${key})">使用</button>`);
         if(d.slot) btns.push(`<button class="primary" onclick="Act.equipBag(${key})">装备</button>`);
-        btns.push(`<button class="ghost" onclick="Act.sellBag(${key})">卖出</button>`);
+        if(Systems.isBound(it)) btns.push(`<button class="ghost" disabled>🔒绑定·不可卖</button>`);
+        else btns.push(`<button class="ghost" onclick="Act.sellBag(${key})">卖出</button>`);
       }
       const head = it ? `<div>${UI.itemTip(it)}</div>${(!isEquip&&d.slot)?UI.itemCompare(it):''}`
                       : `<div class="dim tiny">${DATA.slots[key]||key} · 空槽位，选择背包中可装备的物品：</div>`;
@@ -336,12 +355,16 @@
       const sc=Systems.socketCount(it), used=(it.gems||[]).length;
       const gemBtns=(sc>used)?gems.map(g=>`<button class="ghost" onclick="Act.doSocket('${slot}','${g.id}')">${DATA.items[g.id].name}×${g.qty}</button>`).join(''):'';
       M(`<div>${UI.itemTip(it)}</div>
-        <div class="card"><b>强化</b> <span class="tiny dim">幸运宝石×${Systems.countItem('lucky_gem')}　当前 +${it.plus||0}</span>
-        <div class="btns"><button class="primary" onclick="Act.doEnhance('${slot}')">💠 砸级强化</button></div></div>
+        <div class="card"><b>强化</b> <span class="tiny dim">幸运宝石×${Systems.countItem('lucky_gem')}　当前 +${it.plus||0}　消耗 ${UI.money(Systems.enhanceCost(it))}</span>
+        <div class="btns"><button class="primary" onclick="Act.doEnhance('${slot}')">💠 砸级强化（${Systems.enhanceCost(it)}铜+1宝石）</button></div></div>
+        <div class="card"><b>装备升级·突破</b> <span class="tiny dim">当前 ✦${it.upLv||0}/10　每级全属性+12%，让旧装备跟上等级</span>
+        <div class="btns"><button class="primary" onclick="Act.doUpgrade('${slot}')">⬆ 升级（${UI.money(Systems.gearUpCost(it))}）</button></div></div>
         ${sc?`<div class="card"><b>镶嵌宝石</b> <span class="tiny dim">凹槽 ${used}/${sc}</span>
           <div class="btns">${gemBtns||'<span class="dim tiny">背包无宝石或凹槽已满</span>'}</div></div>`:''}
         <div class="btns"><button class="ghost full" onclick="UI.closeModal();UI.go('forge')">关闭</button></div>`);
     },
+    doUpgrade(slot){ const it=G.equip[slot]; if(!it) return; const r=Systems.upgradeGear(it);
+      if(!r.ok){ T(r.why); return; } Save.save(); this.forgeItem(slot); UI.renderStatus(); T(`装备升级至 ✦${r.upLv}！`); },
     doEnhance(slot){
       const it=G.equip[slot]; if(!it) return;
       const r=Systems.enhance(it);
@@ -358,6 +381,11 @@
     // ===== 命骰 =====
     DICE_CD: 10*60*1000,   // 城镇神龛免费命骰冷却（10 分钟）
     diceRemain(){ const now=Date.now(); const last=G.lastFreeDice||0; return Math.max(0, this.DICE_CD-(now-last)); },
+    diceCost(){ return 300 + (G.level||1)*30; },   // 付费命骰金币消耗（随等级递增）
+    payDice(){ const c=this.diceCost(); if(G.gold<c){ T('金币不足'); return; }
+      Systems.addGold(-c); const r=Events.rollDice(); Save.save(); UI.renderStatus();
+      M(`<h3>🎲 付费命骰</h3><p class="tiny dim">消耗 ${UI.money(c)}</p><div class="narr">${UI.esc(r.text)}</div>
+        <div class="btns"><button class="primary full" onclick="Act.go('diceScreen')">再来 / 查看</button></div>`); },
     rollDice(zoneId){
       const fromShrine = !!zoneId;   // 探索神龛奇遇：随时免费；城镇神龛：每隔一段时间免费一次
       if(!fromShrine){

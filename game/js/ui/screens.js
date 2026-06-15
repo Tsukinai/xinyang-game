@@ -56,7 +56,7 @@
       <div class="narr">${E(city.desc)}</div>
       <h3 class="sub">⚔️ 冒险</h3>${gx(adv)}
       <h3 class="sub">🏪 城镇服务</h3>${gx(svc)}
-      <details class="more"><summary>⋯ 成长与其它</summary>${gx(grow)}</details>
+      <details class="more" open><summary>⋯ 成长与其它</summary>${gx(grow)}</details>
       <h3 class="sub">城中人物</h3><div class="list">${npcs||'<div class="empty">空无一人</div>'}</div>`;
   }
 
@@ -341,6 +341,7 @@
 神龛每隔一段时间允许免费投掷一次（约 10 分钟）。
 （2-3点厄运，4-9平庸，10-11吉，12大吉）</div>
       <div class="btns"><button class="primary full" ${ready?'':'disabled'} onclick="Act.rollDice()">${ready?'🎲 免费投掷命骰':`冷却中：约 ${Math.ceil(rem/60000)} 分钟后免费`}</button></div>
+      <div class="btns"><button class="ghost full" onclick="Act.payDice()">💰 付费投掷（${money(Act.diceCost())}，不限次）</button></div>
       ${Systems.countItem('cursed_skull')>0?`<div class="narr" style="border-left-color:#b65cff">你持有【被诅咒的骷髅】×${Systems.countItem('cursed_skull')}。捏碎它将投掷三次命骰——大喜大悲，由命运裁决。</div>
         <div class="btns"><button class="danger full" onclick="Act.fateRoll()">💀 捏碎骷髅·三连命骰</button></div>`:''}
       <div class="btns"><button class="ghost full" onclick="Act.go('town')">离开</button></div>`;
@@ -394,7 +395,24 @@
     return `<h2 class="title">📖 图鉴</h2>${seg}<div class="list">${body}</div>`;
   }
 
-  window.Screens={ charcreate, town, zonelist, dungeonlist, character, bag, skills, quests, map, shop, combat, forge, diceScreen, codex };
+  // ============ 拍卖行 ============
+  function auction(){
+    const lots=UI.state._auction||[];
+    const rows=lots.map((lot,i)=>{ const it=lot.id?{id:lot.id}:lot.inst; const d=UI.itemDef(it);
+      const afford=G.gold>=lot.price;
+      return `<div class="card"><div class="ct"><span class="ico">${d.icon||'📦'}</span>
+        <span class="nm ${UI.qcls(d.quality)}">${E(d.name)}${it.plus?' +'+it.plus:''}</span>
+        <span class="rt tiny">Lv${d.reqLevel||1}</span></div>
+        ${UI.itemTip(it).replace(/^<div>[\s\S]*?<\/div>/,'')}
+        <div class="btns"><button class="${afford?'primary':''}" ${afford?'':'disabled'} onclick="Act.auctionBuy(${i})">${money(lot.price)} 拍下</button></div></div>`;
+    }).join('')||'<div class="empty">本场已拍空，刷新看看新货</div>';
+    return `<h2 class="title">💰 拍卖行<small>${money(G.gold)}</small></h2>
+      <p class="dim tiny">用金币竞拍稀有装备与传说神器（追装捷径）。售出请到背包点物品「卖出」。</p>
+      <div class="btns"><button class="ghost" onclick="Act.auctionRefresh()">🔄 刷新行情</button></div>
+      <div class="list">${rows}</div>`;
+  }
+
+  window.Screens={ charcreate, town, zonelist, dungeonlist, character, bag, skills, quests, map, shop, combat, forge, diceScreen, codex, auction };
 
   // ============ 生活技能 ============
   function profession(){
