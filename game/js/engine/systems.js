@@ -284,12 +284,17 @@
   // kind: 'nonclass'(非本职业可用装备) | 'lowlevel'(需求等级≤当前-8的低级装备)
   function _bulkMatch(kind, def){
     if (!def || !def.slot || !def.value) return false;       // 仅可装备且有价值的装备
-    if (def.classes && DATA.canClassUse && DATA.canClassUse(def, G.classId)) {
-      // 本职业专属神装：低级判定也保护（不误卖）
-      if (kind==='lowlevel') return false;
-    }
+    // 本职业专属神装（带 classes 限定且本职业可用）：任何一键卖都保护
+    const special = def.classes && DATA.canClassUse && DATA.canClassUse(def, G.classId);
     if (kind==='nonclass') return DATA.canClassUse && !DATA.canClassUse(def, G.classId);
-    if (kind==='lowlevel') return def.reqLevel && def.reqLevel <= G.level - 8;
+    if (kind==='lowlevel'){
+      if (special) return false;
+      const q = def.quality || 'white';
+      if (['gold','dark','epic','legend','divine','artifact'].includes(q)) return false; // 保护金色以上
+      if ((q==='white'||q==='bronze') && (def.reqLevel||1) < G.level) return true;        // 白/青铜杂物（已过当前等级）
+      if ((def.reqLevel||0) <= G.level - 5) return true;                                   // 明显过时的装备
+      return false;
+    }
     return false;
   }
   function bulkSellPreview(kind){

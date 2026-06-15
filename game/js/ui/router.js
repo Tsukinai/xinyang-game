@@ -119,7 +119,7 @@
     sellBag(i){ const g=Systems.sell(i); if(g){ Save.save(); CM(); render(); T('卖出，获得 '+ (g)+' 铜币'); } },
     bulkSell(kind){ const p=Systems.bulkSellPreview(kind);
       if(p.count<=0){ T(kind==='nonclass'?'没有非本职业装备':'没有低级装备可卖'); return; }
-      const label=kind==='nonclass'?'非本职业装备':'低级装备(需求等级≤'+(G.level-8)+')';
+      const label=kind==='nonclass'?'非本职业装备':'低级/白绿杂物（保护金色以上）';
       M(`<h3>一键售卖</h3><div class="narr">将卖出 <b>${p.count}</b> 件${label}，获得约 <b>${UI.money(p.gold)}</b>。<br><span class="tiny dim">本职业专属神装不会被卖出。</span></div>
         <div class="btns"><button class="danger" onclick="Act.doBulkSell('${kind}')">确认卖出</button><button class="ghost" onclick="UI.closeModal()">取消</button></div>`); },
     doBulkSell(kind){ const r=Systems.bulkSell(kind); Save.save(); CM(); render(); T(`卖出 ${r.count} 件，获得 ${UI.money(r.gold)}`); },
