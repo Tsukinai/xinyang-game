@@ -35,7 +35,7 @@
     const d=itemDef(it); if(!d) return '';
     const st=window.Systems?Systems.itemStats(it):(d.stats||{});
     const lines=[];
-    const map={str:'力量',agi:'敏捷',int:'智力',sta:'体质',spi:'精神',atk:'攻击',sp:'法术强度',armor:'护甲',hp:'生命',mp:'法力',crit:'暴击%',dodge:'闪避%',haste:'急速'};
+    const map={str:'力量',agi:'敏捷',int:'智力',sta:'体质',spi:'精神',atk:'攻击',sp:'法术强度',armor:'护甲',hp:'生命',mp:'法力',crit:'暴击%',dodge:'闪避%',haste:'急速',lifesteal:'吸血%',thorns:'荆棘反伤%'};
     for(const k in st){ if(st[k]) lines.push(`<div class="kv"><span>${map[k]||k}</span><b>+${st[k]}</b></div>`); }
     let socket='';
     if (d.slot && window.Systems){ const sc=Systems.socketCount(it); const used=(it.gems||[]).length;
@@ -66,7 +66,7 @@
         <div class="stats" style="grid-template-columns:1fr"><div class="kv"><span>⚔️ 装备战力</span><b style="color:#7be07b">+${gain}</b></div></div></div>`; }
     const ns=window.Systems?Systems.itemStats(it):(d.stats||{});
     const os=window.Systems?Systems.itemStats(old):((itemDef(old)||{}).stats||{});
-    const map={str:'力量',agi:'敏捷',int:'智力',sta:'体质',spi:'精神',atk:'攻击',sp:'法术强度',armor:'护甲',hp:'生命',mp:'法力',crit:'暴击%',dodge:'闪避%',haste:'急速'};
+    const map={str:'力量',agi:'敏捷',int:'智力',sta:'体质',spi:'精神',atk:'攻击',sp:'法术强度',armor:'护甲',hp:'生命',mp:'法力',crit:'暴击%',dodge:'闪避%',haste:'急速',lifesteal:'吸血%',thorns:'荆棘反伤%'};
     const keys=Object.keys(map).filter(k=>ns[k]||os[k]);
     const rows=keys.map(k=>{ const nv=ns[k]||0, ov=os[k]||0, dv=nv-ov;
       const col=dv>0?'#7be07b':dv<0?'#e07b7b':'var(--ink-dim)'; const sign=dv>0?'+':'';

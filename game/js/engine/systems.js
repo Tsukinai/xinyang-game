@@ -51,15 +51,16 @@
     return c;
   }
   function setBonuses() {
-    const counts = equippedSetCounts(); const stats={}, skills=[], info=[];
+    const counts = equippedSetCounts(); const stats={}, skills=[], info=[], procs=[];
     for (const sid in counts) { const set=(DATA.sets||{})[sid]; if(!set) continue; const n=counts[sid];
       for (const thr in (set.bonus||{})) { const b=set.bonus[thr]; const on = n>=(+thr);
         if (on) { if(b.stats) for(const k in b.stats) stats[k]=(stats[k]||0)+b.stats[k];
-          if(b.skill && skills.indexOf(b.skill)<0) skills.push(b.skill); }
+          if(b.skill && skills.indexOf(b.skill)<0) skills.push(b.skill);
+          if(b.procs) for(const p of b.procs) procs.push(p); }
         info.push({ name:set.name, thr:+thr, have:n, total:(set.pieces||[]).length, desc:b.desc, active:on });
       }
     }
-    return { stats, skills, info };
+    return { stats, skills, info, procs };
   }
 
   // ===== 重算派生战斗属性 =====
@@ -115,6 +116,15 @@
       if (sb.healPct) G.healMul = 1 + sb.healPct;
     }
     G.crit = Math.min(75, G.crit); G.dodge = Math.min(50, G.dodge);
+    // 装备特效：吸血 / 荆棘反伤 / 触发（来自词缀、唯一装、套装）
+    let lifesteal=0, thorns=0; const procs=[];
+    for (const slot in G.equip) { const it=G.equip[slot]; if(!it) continue;
+      const st=itemStats(it); lifesteal+=st.lifesteal||0; thorns+=st.thorns||0;
+      const d = window.Items?Items.def(it):DATA.items[it.id]; if(d&&d.procs) for(const p of d.procs) procs.push(p);
+    }
+    lifesteal += setB.stats.lifesteal||0; thorns += setB.stats.thorns||0;
+    if (setB.procs) for(const p of setB.procs) procs.push(p);
+    G.lifesteal = Math.min(60, lifesteal); G.thorns = Math.min(100, thorns); G.procs = procs;
     if (G.hpCur > G.maxHp) G.hpCur = G.maxHp;
     if (G.mpCur > G.maxMp) G.mpCur = G.maxMp;
   }
@@ -321,7 +331,7 @@
   function qualityRank(q){ return QUALITY_ORDER.indexOf(q); }
 
   // ===== 战力评分 =====
-  const SCORE_W = {str:2,agi:2,int:2,sta:2,spi:2,atk:1,sp:1,armor:1.5,hp:0.2,mp:0.1,crit:10,dodge:8,haste:5};
+  const SCORE_W = {str:2,agi:2,int:2,sta:2,spi:2,atk:1,sp:1,armor:1.5,hp:0.2,mp:0.1,crit:10,dodge:8,haste:5,lifesteal:12,thorns:6};
   function statScore(s){ let v=0; for(const k in SCORE_W) v+=(s[k]||0)*SCORE_W[k]; return Math.round(v); }
   function powerScore(){ return statScore({atk:G.atk,sp:G.sp,hp:G.maxHp,mp:G.maxMp,armor:G.armor,crit:G.crit,dodge:G.dodge,haste:G.haste}); }
 

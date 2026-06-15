@@ -174,7 +174,14 @@
     G.hpCur = Math.max(0, G.hpCur - raw);
     C.fxPlayer = { amount: raw, crit };
     pushLog(crit?'crit':'dmg', `${label}，对你造成 ${raw} 伤害${crit?'（暴击）':''}。`);
-    if (G.hpCur <= 0) death();
+    if (G.hpCur <= 0) { death(); return; }
+    // 荆棘反伤（词缀/套装）
+    if (G.thorns>0 && raw>0 && e.hp>0) {
+      const ref = Math.max(1, Math.round(raw * G.thorns/100));
+      e.hp = Math.max(0, e.hp - ref); C.fxEnemy = { amount: ref, crit:false };
+      pushLog('dmg', `🛡️荆棘反弹 ${ref} 伤害给 ${e.name}。`);
+      if (e.hp<=0) { pushLog('sys', `${e.name} 被荆棘反伤击败！`); advance(); }
+    }
   }
 
   // ---- 宠物/随从协助 ----
@@ -232,7 +239,34 @@
     C.fxEnemy = { amount: dmg.amount, crit: dmg.crit };
     C.cur.hp = Math.max(0, C.cur.hp - dmg.amount);
     pushLog(dmg.crit?'crit':'dmg', `${label}，造成 ${dmg.amount} 伤害${dmg.crit?'（暴击！）':''}。`);
+    // 装备吸血（词缀/套装）
+    if (G.lifesteal>0 && dmg.amount>0 && C.cur.hp>0) {
+      const h = Math.round(dmg.amount * G.lifesteal/100);
+      if (h>0) { const b=G.hpCur; G.hpCur=Math.min(G.maxHp,G.hpCur+h); if(G.hpCur>b) pushLog('heal', `装备吸血回复 ${G.hpCur-b} 生命。`); }
+    }
+    // 装备触发效果（onHit / onCrit）
+    if (C.cur.hp>0 && G.procs && G.procs.length) runProcs(dmg.crit);
     if (C.cur.hp<=0) pushLog('sys', `${C.cur.name} 被击败！`);
+  }
+  // 触发装备特效：{trigger:'onHit'|'onCrit', chance, kind:'damage'|'stun'|'dot', name, mult?, stunTurns?, dotMult?, dotTurns?}
+  function runProcs(isCrit) {
+    const e = C.cur; if (!e) return;
+    for (const p of G.procs) {
+      if (!p || (p.trigger==='onCrit' && !isCrit)) continue;
+      if (Math.random() >= (p.chance||0)) continue;
+      const nm = p.name || '装备特效';
+      if (p.kind==='damage') {
+        const ex = Math.max(1, Math.round((G.power||1) * (p.mult||0.5)));
+        e.hp = Math.max(0, e.hp - ex); C.fxEnemy = { amount: ex, crit:true };
+        pushLog('crit', `✨【${nm}】触发，追加 ${ex} 伤害！`);
+      } else if (p.kind==='stun') {
+        e.stun += (p.stunTurns||1); pushLog('sys', `✨【${nm}】触发，${e.name} 被震慑！`);
+      } else if (p.kind==='dot') {
+        e.dots.push({ name:nm, dmg:Math.max(1,Math.round((G.power||1)*(p.dotMult||0.3))), turns:p.dotTurns||3 });
+        pushLog('sys', `✨【${nm}】触发，${e.name} 陷入持续伤害！`);
+      }
+      if (e.hp<=0) break;
+    }
   }
   function heal(amt, src) {
     amt = Math.max(0, Math.round(amt * (G.healMul||1)));

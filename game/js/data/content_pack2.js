@@ -82,10 +82,16 @@ DATA._pack2 = {"regions":[{"monsters":[{"id":"rgv_ember_imp","name":"炽炎小�
 
   // 暗黑式词缀系统：包装 Items.gen（白装不滚，蓝/黄/暗金按品质滚 1-4 条前后缀，改名+加属性）
   (function(AFX){
-    if(!AFX||!window.Items||!Items.gen||Items.__affixed) return;
-    var PRE=(AFX.prefixes||[]).filter(function(a){return a&&a.stat&&STAT_OK[a.stat];});
-    var SUF=(AFX.suffixes||[]).filter(function(a){return a&&a.stat&&STAT_OK[a.stat];});
-    if(!PRE.length&&!SUF.length) return;
+    if(!window.Items||!Items.gen) return;
+    function flt(a){ return a&&a.stat&&STAT_OK[a.stat]; }
+    // 全局可扩展词缀池（后续内容包可向其 push 追加）
+    DATA.affixPool = DATA.affixPool || { prefixes:[], suffixes:[] };
+    ((AFX&&AFX.prefixes)||[]).filter(flt).forEach(function(a){ DATA.affixPool.prefixes.push(a); });
+    ((AFX&&AFX.suffixes)||[]).filter(flt).forEach(function(a){ DATA.affixPool.suffixes.push(a); });
+    // 引擎支持的吸血/荆棘词缀（让随机掉落也能滚出特效）
+    DATA.affixPool.prefixes.push({name:'嗜血的',stat:'lifesteal',flat:3,perLevel:0.05,weight:2});
+    DATA.affixPool.suffixes.push({name:'之吸取',stat:'lifesteal',flat:2,perLevel:0.06,weight:2},{name:'之荆棘',stat:'thorns',flat:6,perLevel:0.2,weight:2});
+    if(Items.__affixed) return;
     function wpick(arr){ if(!arr.length)return null; var t=0,i; for(i=0;i<arr.length;i++)t+=(arr[i].weight||1); var r=Math.random()*t; for(i=0;i<arr.length;i++){ r-=(arr[i].weight||1); if(r<=0)return arr[i]; } return arr[arr.length-1]; }
     var QI={white:0,bronze:1,silver:2,gold:3,dark:4,legend:5,divine:6};
     var orig=Items.gen;
@@ -93,6 +99,7 @@ DATA._pack2 = {"regions":[{"monsters":[{"id":"rgv_ember_imp","name":"炽炎小�
       var it=orig.call(this,level,opts);
       if(!it||!it.stats) return it;
       var qi=QI[it.quality]||0; if(qi<2) return it;
+      var PRE=DATA.affixPool.prefixes, SUF=DATA.affixPool.suffixes;
       var n=Math.min(4,(qi-1)+(Math.random()<0.4?1:0));
       var preName='',sufName='',i;
       for(i=0;i<n;i++){ var usePre=(i%2===0), a=wpick(usePre?PRE:SUF); if(!a)continue;
