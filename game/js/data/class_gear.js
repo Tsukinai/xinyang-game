@@ -4,25 +4,26 @@
  */
 window.DATA = window.DATA || {};
 
+// 数值对齐同级同品质随机掉落（暗金武器≈攻击330、传奇胸甲≈护甲730/体质170），作为该阶 BiS。
 const SIG = {
   rogue:{
-    50:{name:'黑曜之刃',slot:'weapon',q:'dark',stats:{agi:30,atk:120,crit:10}},
-    100:{name:'影舞·疾风战衣',slot:'chest',q:'legend',stats:{agi:60,sta:40,dodge:12,crit:10,hp:800}}},
+    50:{name:'黑曜之刃',slot:'weapon',q:'dark',stats:{agi:55,atk:345,crit:16}},
+    100:{name:'影舞·疾风战衣',slot:'chest',q:'legend',stats:{agi:120,sta:90,armor:300,dodge:16,crit:14,hp:1800}}},
   warrior:{
-    50:{name:'怒涛巨剑',slot:'weapon',q:'dark',stats:{str:32,atk:150,armor:20}},
-    100:{name:'永恒战铠',slot:'chest',q:'legend',stats:{str:60,sta:70,armor:180,hp:1600}}},
+    50:{name:'怒涛巨剑',slot:'weapon',q:'dark',stats:{str:60,atk:360,armor:50}},
+    100:{name:'永恒战铠',slot:'chest',q:'legend',stats:{str:120,sta:150,armor:780,hp:3400}}},
   mage:{
-    50:{name:'黑暗初冬法杖',slot:'weapon',q:'dark',stats:{int:35,sp:135,crit:8}},
-    100:{name:'格瑞玛元素法袍',slot:'chest',q:'legend',stats:{int:75,sta:40,sp:120,hp:800}}},
+    50:{name:'黑暗初冬法杖',slot:'weapon',q:'dark',stats:{int:60,sp:355,crit:12}},
+    100:{name:'格瑞玛元素法袍',slot:'chest',q:'legend',stats:{int:140,sta:85,sp:340,armor:280,hp:1700}}},
   priest:{
-    50:{name:'圣女克里斯蒂娜法杖',slot:'weapon',q:'dark',stats:{spi:32,int:18,sp:120,hp:300}},
-    100:{name:'谢瑶女神法袍',slot:'chest',q:'legend',stats:{spi:65,int:40,sp:120,hp:1000}}},
+    50:{name:'圣女克里斯蒂娜法杖',slot:'weapon',q:'dark',stats:{spi:55,int:30,sp:330,hp:600}},
+    100:{name:'谢瑶女神法袍',slot:'chest',q:'legend',stats:{spi:130,int:80,sp:330,armor:300,hp:2200}}},
   paladin:{
-    50:{name:'圣堂战锤',slot:'weapon',q:'dark',stats:{str:28,atk:120,spi:18}},
-    100:{name:'守护骑士铠',slot:'chest',q:'legend',stats:{str:50,sta:75,armor:200,hp:1700}}},
+    50:{name:'圣堂战锤',slot:'weapon',q:'dark',stats:{str:52,atk:330,spi:30,armor:40}},
+    100:{name:'守护骑士铠',slot:'chest',q:'legend',stats:{str:100,sta:150,armor:800,hp:3400}}},
   hunter:{
-    50:{name:'帕伦特火鸟长弓',slot:'weapon',q:'dark',stats:{agi:32,atk:135,crit:10}},
-    100:{name:'索伦斯之翼皮甲',slot:'chest',q:'legend',stats:{agi:62,sta:45,crit:10,dodge:8,hp:900}}},
+    50:{name:'帕伦特火鸟长弓',slot:'weapon',q:'dark',stats:{agi:58,atk:350,crit:16}},
+    100:{name:'索伦斯之翼皮甲',slot:'chest',q:'legend',stats:{agi:124,sta:95,armor:360,crit:14,dodge:10,hp:1900}}},
 };
 const LORE = {
   rogue:'盗贼巅峰职业「影舞」的标志装备，将速度的奥义发挥到极致。',
