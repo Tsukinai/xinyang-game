@@ -23,19 +23,19 @@ DATA.items.book_necro = {name:'亡灵祭礼·技能书',type:'技能书',quality
 DATA.skillBookPool = ['book_lockpick','book_warcry','book_firstaid','book_steal','book_assassinate','book_necro'];
 
 // ---------- 彩蛋：超低爆率特殊装备（神器，纪念/玩梗）----------
-DATA.items.egg_snail = {name:'发飙的蜗牛',type:'神器·彩蛋',slot:'trinket',quality:'artifact',reqLevel:1,value:0,icon:'🐌',
+DATA.items.egg_snail = {name:'亘古巨蜗·赫姆',type:'神器·秘藏',slot:'trinket',quality:'artifact',reqLevel:1,value:0,icon:'🐌',
   stats:{str:60,agi:60,int:60,sta:60,spi:60,crit:25,hp:2000},egg:true,
-  desc:'传说中本书作者的化身。全属性大幅提升……据说移动速度-99%（毕竟是只蜗牛）。纪念心中永不褪色的 WOW 与 DND。'};
-DATA.items.egg_shell = {name:'永不磨损的蜗牛壳',type:'神器·彩蛋',slot:'offhand',quality:'artifact',reqLevel:1,value:0,icon:'🐚',
-  stats:{armor:600,sta:80,hp:3000},egg:true,desc:'蜗牛背上那只壳。坚不可摧，再凶的怪也咬不动。'};
-DATA.items.egg_keyboard = {name:'程序员的机械键盘',type:'神器·彩蛋',slot:'trinket',quality:'artifact',reqLevel:1,value:0,icon:'⌨️',
-  stats:{int:80,sp:200,crit:20},egg:true,desc:'敲下回车，便能改写主脑的规则。Ctrl+S 已保存你的命运。'};
-DATA.items.egg_mastermind = {name:'主脑的彩蛋',type:'神器·彩蛋',slot:'trinket',quality:'artifact',reqLevel:1,value:0,icon:'🥚',
-  stats:{crit:30,agi:40,int:40},egg:true,desc:'掌控第二世界的「主脑」藏起的彩蛋。找到它的人，运气好得不像话。'};
-DATA.items.egg_wowdnd = {name:'WOW与DND纪念徽章',type:'神器·彩蛋',slot:'trinket',quality:'artifact',reqLevel:1,value:0,icon:'🎖️',
-  stats:{str:40,agi:40,int:40,sta:40,spi:40,crit:15,hp:1500},egg:true,desc:'献给永不褪色的两座丰碑。佩戴它，仿佛回到了最初热血的夜晚。'};
-DATA.items.egg_nieyan = {name:'涅炎的染血匕首',type:'神器·彩蛋',slot:'weapon',weaponType:'dagger',quality:'artifact',reqLevel:1,value:0,icon:'🔪',
-  stats:{agi:80,atk:300,crit:30},egg:true,desc:'狂贼涅炎用过的匕首，刃上血迹永不干涸。盗贼/猎魔者梦寐以求。'};
+  desc:'传说活过万年的远古巨蜗，背负一座移动的山。全属性惊人，却慢得令人发指。'};
+DATA.items.egg_shell = {name:'永不磨损的巨蜗之壳',type:'神器·秘藏',slot:'offhand',quality:'artifact',reqLevel:1,value:0,icon:'🐚',
+  stats:{armor:600,sta:80,hp:3000},egg:true,desc:'巨蜗背上的硬壳，坚不可摧，再凶的利齿也咬不动分毫。'};
+DATA.items.egg_keyboard = {name:'镌命石板',type:'神器·秘藏',slot:'trinket',quality:'artifact',reqLevel:1,value:0,icon:'📜',
+  stats:{int:80,sp:200,crit:20},egg:true,desc:'镌刻着创世真言的远古石板，诵读其上的符文，便能短暂改写战局的走向。'};
+DATA.items.egg_mastermind = {name:'命运之核',type:'神器·秘藏',slot:'trinket',quality:'artifact',reqLevel:1,value:0,icon:'🔮',
+  stats:{crit:30,agi:40,int:40},egg:true,desc:'世界本源凝结而成的命运结晶，持有它的人，运气好得不像话。'};
+DATA.items.egg_wowdnd = {name:'创世双碑·纪念徽章',type:'神器·秘藏',slot:'trinket',quality:'artifact',reqLevel:1,value:0,icon:'🎖️',
+  stats:{str:40,agi:40,int:40,sta:40,spi:40,crit:15,hp:1500},egg:true,desc:'献给铸就这片大陆的两座远古丰碑，佩戴它仿佛回到诸神初临的黎明。'};
+DATA.items.egg_nieyan = {name:'无名狂贼的染血匕首',type:'神器·秘藏',slot:'weapon',weaponType:'dagger',quality:'artifact',reqLevel:1,value:0,icon:'🔪',
+  stats:{agi:80,atk:300,crit:30},egg:true,desc:'一位湮没于传说的狂贼所用的匕首，刃上血迹永不干涸。盗贼/猎魔者梦寐以求。'};
 DATA.eggItems = ['egg_snail','egg_shell','egg_keyboard','egg_mastermind','egg_wowdnd','egg_nieyan'];
 
 // ---------- 技能书来源：商店 / BOSS 掉落 / 任务 ----------

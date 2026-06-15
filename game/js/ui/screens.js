@@ -109,6 +109,8 @@
       ${G.level>=cls.specLevel&&!G.spec?`<div class="card btn" style="border-color:var(--gold)" onclick="Act.chooseSpec()">⚡ 可选择流派（专长）！点此选择</div>`:''}
       ${G.spec&&(DATA.specBonus||{})[G.spec]?`<div class="card"><b>流派加成</b> <span class="tiny q-gold">${E((DATA.specBonus[G.spec]||{}).note||'')}</span></div>`:''}
       <h3 class="sub">基础属性 ${G.statPoints>0?'<span class="tiny q-gold">（有 '+G.statPoints+' 点可加）</span>':''}</h3>
+      <p class="dim tiny">力量→攻击 · 敏捷→攻击/护甲/暴击/闪避 · 智力→法强/法力 · 体质→生命 · 精神→法强(治疗)/法力/回复。
+        你的主属性是 <b class="q-gold">${({str:'力量',agi:'敏捷',int:'智力',spi:'精神'})[cls.power]||cls.power}</b>（收益翻倍，优先堆它）。</p>
       <div class="card">${allocRows}${G.statPoints>0?`<div class="btns"><button class="ghost" onclick="Act.resetAlloc()">洗点</button></div>`:''}</div>
       <h3 class="sub">战斗属性</h3>
       <div class="card"><div class="stats">${combat.map(([n,v])=>`<div class="s"><span>${n}</span><b>${v}</b></div>`).join('')}</div></div>
@@ -340,8 +342,9 @@
     const tab=UI.state._codexTab||'sets';
     const ownedId=id=>(G.equip&&Object.keys(G.equip).some(s=>G.equip[s]&&G.equip[s].id===id))||(G.bag||[]).some(b=>b.id===id);
     const seg=`<div class="seg">
-      <button class="segbtn ${tab==='sets'?'on':''}" onclick="Act.codexTab('sets')">套装图鉴</button>
-      <button class="segbtn ${tab==='uniq'?'on':''}" onclick="Act.codexTab('uniq')">传说图鉴</button></div>`;
+      <button class="segbtn ${tab==='sets'?'on':''}" onclick="Act.codexTab('sets')">套装</button>
+      <button class="segbtn ${tab==='uniq'?'on':''}" onclick="Act.codexTab('uniq')">传说</button>
+      <button class="segbtn ${tab==='mon'?'on':''}" onclick="Act.codexTab('mon')">怪物</button></div>`;
     let body='';
     if(tab==='sets'){
       const ids=Object.keys(DATA.sets); let complete=0;
@@ -354,7 +357,7 @@
           <div class="tiny" style="margin:3px 0;line-height:1.7">${pcHtml}</div>${bonusHtml}</div>`;
       }).join('');
       body=`<div class="dim tiny" style="margin:4px 0">已集齐 <b class="q-gold">${complete}</b> / ${ids.length} 套</div>${cards}`;
-    } else {
+    } else if(tab==='uniq'){
       const ids=[...new Set(DATA.eggItems||[])].filter(id=>DATA.items[id]);
       ids.sort((a,b)=>(DATA.items[a].reqLevel||0)-(DATA.items[b].reqLevel||0));
       let owned=0;
@@ -365,6 +368,19 @@
           <div class="tiny dim">${E(d.desc||'')}${procTxt?` <span class="q-gold">触发：${E(procTxt)}</span>`:''}</div></div>`;
       }).join('');
       body=`<div class="dim tiny" style="margin:4px 0">已收集 <b class="q-gold">${owned}</b> / ${ids.length} 件传说神器</div>${cards}`;
+    } else {
+      // 怪物图鉴：掉落表 + 概率（排除彩蛋掉落）
+      const eggSet={}; (DATA.eggItems||[]).forEach(id=>eggSet[id]=1);
+      const mons=Object.values(DATA.monsters).filter(m=>m&&m.name).sort((a,b)=>(a.level||0)-(b.level||0));
+      let killedKinds=0;
+      const cards=mons.map(m=>{ const k=(G.kills&&G.kills[m.id])||0; if(k)killedKinds++;
+        const tag=m.type==='boss'?'<span class="tag q-dark">BOSS</span>':m.type==='elite'?'<span class="tag q-purple">精英</span>':'';
+        const drops=(m.drops||[]).filter(d=>d&&d.item&&DATA.items[d.item]&&!eggSet[d.item])
+          .map(d=>{ const it=DATA.items[d.item]; return `<span class="${UI.qcls(it.quality)}">${E(it.name)}</span> <span class="dim">${Math.round((d.chance||0)*100)}%</span>`; }).join('　');
+        return `<div class="card"><div class="ct"><span class="ico">${m.icon||'👹'}</span><span class="nm">${E(m.name)} ${tag}</span><span class="rt tiny">Lv${m.level||1}${k?` · 击杀${k}`:''}</span></div>
+          <div class="tiny dim" style="line-height:1.7">掉落：${drops||'<span>仅随机词缀装备 / 金币</span>'}</div></div>`;
+      }).join('');
+      body=`<div class="dim tiny" style="margin:4px 0">共 ${mons.length} 种怪物 · 已击杀过 <b class="q-gold">${killedKinds}</b> 种（掉落概率不含彩蛋神器）</div>${cards}`;
     }
     return `<h2 class="title">📖 图鉴</h2>${seg}<div class="list">${body}</div>`;
   }
