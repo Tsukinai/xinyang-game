@@ -48,7 +48,7 @@ DATA.allies = {
 
 // ===== 公会 =====
 DATA.guilds = {
-  niuren:{ id:'niuren', name:'牛人部落', icon:'🐮', desc:'聂言（匿名）与唐尧创建的超级公会，星空药店为后盾。加入后可领公会任务、用贡献值兑换装备、招募随从。' },
+  niuren:{ id:'niuren', name:'牛人部落', icon:'🐮', desc:'大陆上声名最盛的超级公会，以雄厚的星空药剂商会为后盾。加入后可领公会任务、用贡献值兑换装备、招募随从。' },
 };
 // 公会贡献商店
 DATA.guildShop = [

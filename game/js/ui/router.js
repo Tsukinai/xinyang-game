@@ -153,7 +153,10 @@
       if(UI.state._autoTimer){ clearTimeout(UI.state._autoTimer); UI.state._autoTimer=null; } // 避免自动续战与手动点击重复触发
       CM(); // 点击随机事件选项后关闭弹窗
       const ev=Events.maybeEvent(z);
-      if(ev && ev.type!=='ambush'){ this._handleEvent(ev, zoneId); return; }
+      if(ev && ev.type!=='ambush'){
+        if(UI.state.screen==='combat'){ UI.state.screen='zonelist'; render(); } // 自动续战遇事件：避免残留上一场战斗结束界面
+        this._handleEvent(ev, zoneId); return;
+      }
       const monster = ev && ev.type==='ambush' ? ev.monster : Events.encounter(z);
       if(!monster){ T('这里空无一物'); return; }
       UI.state.ctx={zoneId};

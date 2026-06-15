@@ -13,7 +13,7 @@ DATA.classes = {
     id:'rogue', name:'盗贼', icon:'🗡️', role:'近战DPS', empire:'greenland',
     power:'agi', magic:false, resource:'能量',
     desc:'敏捷近战刺客。轻甲菜刀，靠潜行、出血与毒素磨杀目标，背刺暴击恐怖。可开锁、排陷阱。',
-    lore:'孤寂的行者，追逐阴影的脚步——这是盗贼的赞歌。主角聂言所选职业，巅峰进阶为「影舞」，奥义是速度。',
+    lore:'孤寂的行者，追逐阴影的脚步——这是盗贼的赞歌。巅峰进阶为「影舞」，奥义是速度。',
     base:{str:3,agi:7,int:1,sta:3,spi:1}, growth:{agi:2,str:1,sta:1},
     startCity:'tracker', specLevel:10,
     specs:[

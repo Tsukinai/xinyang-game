@@ -7,7 +7,7 @@ window.DATA = window.DATA || {};
 
 DATA.cities = {
   tracker:{ id:'tracker', name:'特拉克小镇', empire:'greenland', icon:'🏘️', recommendLevel:[1,9],
-    desc:'卡罗尔大草原中的练级小镇，泥土房屋，练级玩家众多。新手的起点。',
+    desc:'卡罗尔大草原中的练级小镇，泥土房屋，往来历练的冒险者众多。新手的起点。',
     services:{shop:true,bank:true,auction:true,trainer:true,graveyard:true,forge:true},
     shop:['potion_hp_s','potion_mp_s','bandage','scroll_tp','lockpick','iron_ore','herb'],
     npcs:[

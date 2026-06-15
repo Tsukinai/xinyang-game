@@ -15,7 +15,7 @@
       </div>`).join('');
     return `<h2 class="title">⚔ 进入《信仰》<small>选择你的职业</small></h2>
       <div class="narr">${E(DATA.intro)}</div>
-      <h3 class="sub">选择职业（不必像主角一样玩盗贼）</h3>
+      <h3 class="sub">选择你的职业</h3>
       <div class="list classpick">${list}</div>
       <h3 class="sub">角色名</h3>
       <input id="charname" maxlength="8" placeholder="输入你的名字" style="width:100%;padding:9px;background:#0a0805;border:1px solid var(--gold-d);border-radius:5px;color:var(--ink);font-size:15px">
@@ -59,12 +59,18 @@
   // ============ 野外列表 ============
   function zonelist(){
     const city=DATA.cities[G.cityId];
+    const diff=z=>{ const lo=z.levelRange[0], hi=z.levelRange[1];
+      if(G.level<lo-1) return ['危险','#c0392b'];
+      if(G.level<=hi+1) return ['适宜','#5fa84a'];
+      if(G.level<=hi+6) return ['偏易','#9a8c6e'];
+      return ['经验微薄','#9a8c6e'];
+    };
     const zs=(city.zones||[]).map(id=>{ const z=DATA.zones[id]; if(!z) return '';
-      const can=G.level>=z.levelRange[0]-2;
+      const [dt,dc]=diff(z);
       return `<div class="card btn" onclick="Act.exploreZone('${id}')">
         <div class="ct"><span class="ico">${z.icon}</span><span class="nm">${E(z.name)}</span>
-          <span class="rt">Lv${z.levelRange[0]}-${z.levelRange[1]}</span></div>
-        <div class="ds">${E(z.desc)}</div>${can?'':'<div class="tiny" style="color:#c0392b">等级偏低，危险！</div>'}</div>`;
+          <span class="rt">Lv${z.levelRange[0]}-${z.levelRange[1]} <b style="color:${dc}">${dt}</b></span></div>
+        <div class="ds">${E(z.desc)}</div></div>`;
     }).join('');
     return `<h2 class="title">🌾 野外练级<small>${E(city.name)}</small></h2>
       <p class="dim tiny">探索时随机遇怪，亦可能触发宝箱、奇遇、伏击等随机事件。</p>
