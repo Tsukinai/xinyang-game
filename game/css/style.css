@@ -141,6 +141,7 @@ button.full,.b.full{width:100%;text-align:center}
   animation:castpulse .8s ease-in-out infinite alternate}
 @keyframes castpulse{from{box-shadow:0 0 0 0 rgba(255,122,26,.4)}to{box-shadow:0 0 8px 2px rgba(255,122,26,.7)}}
 .loot-preview{margin:8px 0;padding:7px 10px;background:#0a0805;border:1px solid var(--line);border-radius:5px;line-height:1.7}
+.reddot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);vertical-align:middle;margin-left:4px;box-shadow:0 0 4px var(--red)}
 #log{margin-top:10px;background:#0a0805;border:1px solid var(--line);border-radius:5px;
   padding:8px 9px;height:clamp(120px,32vh,220px);overflow-y:auto;font-size:12.5px;line-height:1.5}
 #log .l{margin:2px 0;border-bottom:1px solid #1a150d;padding-bottom:2px}

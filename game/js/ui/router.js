@@ -66,12 +66,19 @@
 
     talkNpc(npcId){
       const city=DATA.cities[G.cityId]; const npc=(city.npcs||[]).find(n=>n.id===npcId); if(!npc) return;
+      G.talkedNpcs=G.talkedNpcs||{}; G.talkedNpcs[G.cityId+':'+npcId]=true; Save.save();   // 记录已对话(去红点)
       Quests.onTalk(npcId);
       const offers=Object.values(DATA.quests).filter(q=>q.cityId===G.cityId&&q.giver===npc.name&&Quests.isAvailable(q.id));
       const ob=offers.map(q=>`<div class="card btn" onclick="Act.acceptQuest('${q.id}')"><b>${UI.esc(q.name)}</b><div class="ds">${UI.esc(q.desc)}</div><div class="tiny q-gold">接取</div></div>`).join('');
       M(`<h3>${npc.icon} ${UI.esc(npc.name)}</h3><div class="narr">${UI.esc(npc.dialog)}</div>${ob||''}
-        <div class="btns"><button class="full" onclick="UI.closeModal();UI.render()">结束对话</button></div>`);
+        <div class="btns"><button class="full" onclick="Act.endTalk()">结束对话</button></div>`);
     },
+    endTalk(){ UI.state._keepScroll=true; CM(); render(); },   // 关闭对话保留滚动位置
+    climb(id){ const q=DATA.quests[id], st=G.quests[id]; if(!q||!st||!q.objective)return;
+      st.prog=(st.prog||0)+Systems.rand(40,90);
+      if(st.prog>=q.objective.count){ st.prog=q.objective.count; st.status='done'; T('🎉 登顶！可交付领取奖励'); }
+      else T(`奋力攀登… ${st.prog}/${q.objective.count} 级`);
+      UI.state._keepScroll=true; Save.save(); render(); },
 
     // ===== 角色 =====
     allocate(stat){ if(Systems.allocate(stat,1)){ Save.save(); render(); } else T('没有可分配的属性点'); },
@@ -88,21 +95,35 @@
     itemModal(where, key){
       let it, isEquip=where==='equip';
       if(isEquip) it=G.equip[key]; else it=G.bag[key];
-      if(!it) return;
-      const d=UI.itemDef(it); const btns=[];
-      if(isEquip){ btns.push(`<button onclick="Act.unequip('${key}')">卸下</button>`);
-        if(d.slot) btns.push(`<button class="ghost" onclick="Act.forgeItem('${key}')">强化/镶嵌</button>`); }
+      if(!isEquip && !it) return;
+      const d=it?UI.itemDef(it):null; const btns=[]; let swap='';
+      if(isEquip){
+        if(it){ btns.push(`<button onclick="Act.unequip('${key}')">卸下</button>`);
+          btns.push(`<button class="ghost" onclick="Act.forgeItem('${key}')">强化/镶嵌</button>`); }
+        // 可更换/可装备：背包里适配该槽位且可用的装备
+        const cand=(G.bag||[]).map((b,i)=>({b,i,bd:UI.itemDef(b)})).filter(x=>x.bd&&x.bd.slot&&
+          (x.bd.slot===key || (x.bd.slot==='ring1'&&(key==='ring1'||key==='ring2'))) &&
+          !(Systems.canEquip(x.b)&&Systems.canEquip(x.b).ok===false))
+          .sort((a,b)=>Systems.statScore(Systems.itemStats(b.b))-Systems.statScore(Systems.itemStats(a.b)));
+        if(cand.length) swap=`<div class="tiny q-gold" style="margin-top:8px">${it?'可更换为：':'可装备：'}</div>`+cand.map(x=>
+          `<div class="card btn" onclick="Act.swapEquip(${x.i},'${key}')"><div class="ct"><span class="ico">${x.bd.icon||'📦'}</span>
+            <span class="nm ${UI.qcls(x.bd.quality)}">${UI.esc(x.bd.name)}${x.b.plus?' +'+x.b.plus:''}</span>
+            <span class="rt tiny">Lv${x.bd.reqLevel||1} · 战力${Systems.statScore(Systems.itemStats(x.b))}</span></div></div>`).join('');
+      }
       else {
         if(d.use) btns.push(`<button class="primary" onclick="Act.useBag(${key})">使用</button>`);
         if(d.slot) btns.push(`<button class="primary" onclick="Act.equipBag(${key})">装备</button>`);
         btns.push(`<button class="ghost" onclick="Act.sellBag(${key})">卖出</button>`);
       }
-      const cmp=(!isEquip && d.slot)?UI.itemCompare(it):'';
-      M(`<div>${UI.itemTip(it)}</div>${cmp}<div class="btns">${btns.join('')}<button class="ghost" onclick="UI.closeModal()">关闭</button></div>`);
+      const head = it ? `<div>${UI.itemTip(it)}</div>${(!isEquip&&d.slot)?UI.itemCompare(it):''}`
+                      : `<div class="dim tiny">${DATA.slots[key]||key} · 空槽位，选择背包中可装备的物品：</div>`;
+      M(`${head}${swap}<div class="btns">${btns.join('')}<button class="ghost" onclick="UI.closeModal()">关闭</button></div>`);
     },
     bagTab(i){ UI.state._bagTab=i; UI.state._keepScroll=true; render(); },
     codexTab(t){ UI.state._codexTab=t; UI.state._keepScroll=true; render(); },
     equipBag(i){ const r=Systems.equip(i); if(r&&r.ok){ Save.save(); CM(); render(); T('已装备'); } else T((r&&r.why)||'无法装备'); },
+    swapEquip(i, slot){ const r=Systems.equipToSlot(i, slot); if(r&&r.ok){ Save.save(); CM(); render(); T('已更换装备'); } else T((r&&r.why)||'无法装备'); },
+    autoEquip(){ const n=Systems.autoEquipBest(); if(n){ Save.save(); CM(); render(); T(`⚡ 一键装备：换上 ${n} 件更优装备`); } else T('已是最优，没有可换的更强装备'); },
     unequip(slot){ Systems.unequip(slot); Save.save(); CM(); render(); T('已卸下'); },
     useBag(i){ const it=G.bag[i]; if(!it) return; const d=DATA.items[it.id]; if(!d||!d.use) return;
       const u=d.use;
@@ -169,7 +190,8 @@
     _handleEvent(ev, zoneId){
       const cont=`<button class="primary" onclick="Act.exploreZone('${zoneId}')">继续探索</button><button class="ghost" onclick="UI.closeModal();UI.go('zonelist')">返回</button>`;
       if(ev.type==='fortune'){ Systems.addGold(ev.gold); Save.save(); UI.renderStatus(); }
-      if(ev.type==='omen'){ /* 预兆：临时鼓舞，下一场战斗略增益（简化为回满） */ Systems.fullHeal(); UI.renderStatus(); }
+      if(ev.type==='omen'){ // 天陨祝福：回满 + 下一场战斗增益
+        Systems.fullHeal(); G.blessing={name:'天陨祝福',atk:Math.round((G.power||10)*0.2),crit:10}; Save.save(); UI.renderStatus(); }
       let inner='';
       if(ev.type==='chest'){
         UI.state._chestTries=5;   // 每个宝箱 5 次开锁机会
@@ -179,7 +201,7 @@
         inner=`<div class="btns"><button class="primary" onclick="Act.rollDice('${zoneId}')">🎲 投掷命骰</button>${cont}</div>`;
       } else if(ev.type==='merchant' && ev.item){
         UI.state._merchant=ev;
-        inner=`<div>${UI.itemTip(ev.item)}</div><div class="btns"><button class="primary" onclick="Act.buyMerchant('${zoneId}')">购买（${ev.price}铜）</button>${cont}</div>`;
+        inner=`<div>${UI.itemTip(ev.item)}</div>${UI.itemCompare(ev.item)}<div class="btns"><button class="primary" onclick="Act.buyMerchant('${zoneId}')">购买（${ev.price}铜）</button>${cont}</div>`;
       } else { inner=`<div class="btns">${cont}</div>`; }
       M(`<h3>🌟 奇遇</h3><div class="narr">${UI.esc(ev.text)}</div>${inner}`);
     },
@@ -246,7 +268,7 @@
         m.xp=Math.round(m.xp*df.reward); m.goldMax=Math.round(m.goldMax*df.reward); return m; };
       const enemies=d.waves.map(mk); enemies.push(mk(d.boss));
       UI.state.ctx={dungeonId:dgId, diff:diffKey};
-      Combat.start({ enemies, dungeonId:dgId, onEnd:()=>{ render(); } });
+      Combat.start({ enemies, dungeonId:dgId, dropLuck:df.luck||0, onEnd:()=>{ render(); } });
       UI.state.screen='combat'; CM(); render();
       if(UI.state.auto) this._autoTick();
     },

@@ -63,12 +63,14 @@ window.DATA = window.DATA || {};
         return { type:'shrine', text:`你发现一座古老神龛，似乎可以投掷命骰祈求命运。` };
       }
       case 'merchant': {
-        const inst = window.Items ? Items.gen(lvl, {luck:8}) : null;
+        let inst = null;
+        if (window.Items) { for (let i=0;i<10;i++){ const c=Items.gen(lvl,{luck:8,forClass:G.classId});
+          inst=c; if (!DATA.canClassUse || DATA.canClassUse(c, G.classId)) break; } }
         const price = inst ? Math.round(inst.value*1.6) : 50;
-        return { type:'merchant', item:inst, price, text:`神秘行脚商人向你兜售：${inst?inst.name:'神秘货物'}（${price}铜币）。` };
+        return { type:'merchant', item:inst, price, text:`行脚商人向你兜售一件适合你的装备（${price}铜币）：` };
       }
       case 'omen': default: {
-        return { type:'omen', text:`天空划过一道流星——「天陨」预兆，似有异变将至……`, buff:true };
+        return { type:'omen', text:`天空划过一道流星——你接住了坠落的星辉，获得【天陨祝福】：回满状态，且下一场战斗攻击与暴击提升！`, buff:true };
       }
     }
   }

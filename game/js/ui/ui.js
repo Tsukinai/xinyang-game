@@ -55,16 +55,10 @@
     if(slot==='ring1' && G.equip.ring1 && !G.equip.ring2) slot='ring2';
     return slot;
   }
-  // 背包装备 vs 已穿戴 的属性对比 HTML
-  function itemCompare(it){
-    const d=itemDef(it); if(!d||!d.slot) return '';
-    const slot=equipTargetSlot(d);
-    const old=G.equip[slot];
-    const slotName=DATA.slots[slot]||d.type||'';
-    if(!old){ const gain=window.Systems?Systems.statScore(window.Systems.itemStats(it)):0;
-      return `<div class="cmp"><div class="tiny dim">该部位（${slotName}）当前为空，装备后净增上方全部属性。</div>
-        <div class="stats" style="grid-template-columns:1fr"><div class="kv"><span>⚔️ 装备战力</span><b style="color:#7be07b">+${gain}</b></div></div></div>`; }
-    const ns=window.Systems?Systems.itemStats(it):(d.stats||{});
+  // 单个对比块：新装备 ns 对比某个已穿戴 old
+  function cmpBlock(ns, old, slotName){
+    if(!old){ const gain=window.Systems?Systems.statScore(ns):0;
+      return `<div class="cmp"><div class="tiny dim">${slotName}（空）：装备后净增全部属性 · ⚔️战力 <b style="color:#7be07b">+${gain}</b></div></div>`; }
     const os=window.Systems?Systems.itemStats(old):((itemDef(old)||{}).stats||{});
     const map={str:'力量',agi:'敏捷',int:'智力',sta:'体质',spi:'精神',atk:'攻击',sp:'法术强度',armor:'护甲',hp:'生命',mp:'法力',crit:'暴击%',dodge:'闪避%',haste:'急速',lifesteal:'吸血%',thorns:'荆棘反伤%'};
     const keys=Object.keys(map).filter(k=>ns[k]||os[k]);
@@ -78,6 +72,14 @@
       scoreRow=`<div class="kv"><span>⚔️ 装备战力</span><b style="color:${col}">${sv>0?'+':''}${sv}</b></div>`; }
     return `<div class="cmp"><div class="tiny dim">对比已穿（${slotName}）：${itemName(old)}${old.plus?' +'+old.plus:''}</div>
       <div class="stats" style="grid-template-columns:1fr">${scoreRow}${rows}</div></div>`;
+  }
+  // 背包装备 vs 已穿戴 的属性对比 HTML（戒指对比两个戒指位）
+  function itemCompare(it){
+    const d=itemDef(it); if(!d||!d.slot) return '';
+    const ns=window.Systems?Systems.itemStats(it):(d.stats||{});
+    if(d.slot==='ring1') return cmpBlock(ns, G.equip.ring1, '戒指①') + cmpBlock(ns, G.equip.ring2, '戒指②');
+    const slot=equipTargetSlot(d);
+    return cmpBlock(ns, G.equip[slot], DATA.slots[slot]||d.type||'');
   }
 
   // ---------- 状态栏 ----------
@@ -104,7 +106,8 @@
   }
 
   // ---------- 底部导航 ----------
-  const NAV=[['town','🏛️','城镇'],['character','🧝','角色'],['bag','🎒','背包'],['skills','✨','技能'],['quests','📜','任务'],['map','🗺️','地图']];
+  // 按核心循环使用频率排序：城镇(冒险枢纽)→背包(每战后整理)→任务(目标/交付)→角色(加点)→技能→地图(传送,最低频)
+  const NAV=[['town','🏛️','城镇'],['bag','🎒','背包'],['quests','📜','任务'],['character','🧝','角色'],['skills','✨','技能'],['map','🗺️','地图']];
   function renderNav(){
     const nav=$('nav'); if(!nav) return;
     if(!G){ nav.innerHTML=''; return; }

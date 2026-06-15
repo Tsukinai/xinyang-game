@@ -32,6 +32,13 @@
       logLines: [],
     };
     pushLog('sys', `遭遇 ${C.cur ? C.cur.name + (C.cur.type==='boss'?' [BOSS]':C.cur.type==='elite'?' [精英]':'') : '虚空'}！`);
+    // 天陨祝福：消耗一次性祝福，作为整场战斗增益
+    if (G.blessing) {
+      if (G.blessing.atk) C.pBuffs.push({ name:G.blessing.name, stat:'atk', amt:G.blessing.atk, turns:99 });
+      if (G.blessing.crit) C.pBuffs.push({ name:G.blessing.name, stat:'crit', amt:G.blessing.crit, turns:99 });
+      pushLog('heal', `✨【${G.blessing.name}】生效：本场战斗攻击与暴击提升！`);
+      G.blessing = null;
+    }
     return state();
   }
 
@@ -333,20 +340,31 @@
       for (const l of loot) { C.acc.loot[l.id] = (C.acc.loot[l.id]||0)+l.qty; }
       Quests.onKill(dead.id);
       if (loot.length) pushLog('loot', `掉落：${loot.map(l=>itemName(l.id)+(l.qty>1?'×'+l.qty:'')).join('，')}`);
+      // 副本难度幸运（专家级爆率/品质更高），叠加到装备掉落
+      const dLuck = C.spec.dropLuck || 0;
       // 按怪物专属掉落表生成装备（类型限职业、数值浮动，无花哨词缀）
       const gl = dead.def.gearLoot;
       if (window.Items && gl) {
         for (let i=0;i<(gl.n||1);i++){
-          if (Math.random() >= gl.chance) continue;
-          const inst = Items.gen(dead.level, { luck: gl.luck||0, forClass: G.classId,
+          if (Math.random() >= Math.min(1, gl.chance*(1+dLuck/30))) continue;
+          const inst = Items.gen(dead.level, { luck: (gl.luck||0)+dLuck, forClass: G.classId,
             theme: { armor: gl.themeArmor, weapons: gl.themeWeapons } });
           C.acc.genLoot.push(inst);
           pushLog('loot', `掉落：<span class="${DATA.qualities[inst.quality].cls}">${inst.name}</span>`);
         }
       }
-      // 彩蛋：超低爆率传说神器
+      // 副本高难额外掉落：精英/BOSS 必有一次按难度幸运的装备掉落（即使怪物无 gearLoot）
+      if (window.Items && dLuck>0 && (dead.type==='boss'||dead.type==='elite')) {
+        if (Math.random() < Math.min(0.95, 0.2 + dLuck/40)) {
+          const inst = Items.gen(dead.level, { luck: dLuck + (dead.type==='boss'?20:8), forClass: G.classId });
+          C.acc.genLoot.push(inst);
+          pushLog('loot', `掉落：<span class="${DATA.qualities[inst.quality].cls}">${inst.name}</span>`);
+        }
+      }
+      // 彩蛋：超低爆率传说神器（高难副本显著提升彩蛋率）
       if (DATA.eggItems && DATA.eggItems.length) {
-        const eggCh = dead.type==='boss'?0.004 : dead.type==='elite'?0.001 : 0.0002;
+        const eggBase = dead.type==='boss'?0.004 : dead.type==='elite'?0.001 : 0.0002;
+        const eggCh = eggBase * (1 + dLuck/12);
         if (Math.random() < eggCh) {
           const eid = DATA.eggItems[Systems.rand(0, DATA.eggItems.length-1)];
           C.acc.loot[eid] = (C.acc.loot[eid]||0)+1;

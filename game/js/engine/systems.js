@@ -225,6 +225,32 @@
     recompute();
     return true;
   }
+  // 把背包指定物品装到指定槽位（用于"更换"，绕过双戒指自动逻辑）
+  function equipToSlot(bagIndex, slot) {
+    const it = G.bag[bagIndex]; if (!it) return { ok:false };
+    const chk = canEquip(it); if (chk.ok===false) return chk;
+    const old = G.equip[slot]; G.equip[slot] = it; G.bag.splice(bagIndex,1);
+    if (old) G.bag.push(old); recompute(); return { ok:true };
+  }
+  // 一键装备最优：每个槽位换上「战力更高且可用」的背包装备
+  function autoEquipBest() {
+    const slots = ['weapon','offhand','head','shoulder','chest','hand','waist','legs','feet','cloak','neck','ring1','ring2','trinket'];
+    const sc = it => statScore(itemStats(it));
+    let changed = 0;
+    for (const slot of slots) {
+      let best = -1, bestScore = G.equip[slot] ? sc(G.equip[slot]) : -1;
+      for (let i=0;i<G.bag.length;i++){ const it=G.bag[i]; const def=window.Items?Items.def(it):DATA.items[it.id];
+        if (!def || !def.slot) continue;
+        const fits = def.slot===slot || (def.slot==='ring1' && (slot==='ring1'||slot==='ring2'));
+        if (!fits) continue;
+        const chk = canEquip(it); if (chk.ok===false) continue;
+        const s = sc(it); if (s > bestScore) { bestScore = s; best = i; }
+      }
+      if (best >= 0) { const it=G.bag[best], old=G.equip[slot]; G.equip[slot]=it; G.bag.splice(best,1); if(old) G.bag.push(old); changed++; }
+    }
+    if (changed) recompute();
+    return changed;
+  }
 
   // ===== 经济 =====
   function addGold(n){ G.gold = Math.max(0, G.gold + n); }
@@ -337,7 +363,7 @@
 
   window.Systems = {
     LEVEL_CAP, xpToNext, recompute, fullHeal, restTick, gainXp, levelUp,
-    allocate, resetAlloc, addItem, addInstance, removeItem, countItem, equip, unequip, canEquip,
+    allocate, resetAlloc, addItem, addInstance, removeItem, countItem, equip, unequip, equipToSlot, autoEquipBest, canEquip,
     addGold, buy, sell, rollLoot, itemStats, finalAttr, rand, qualityRank, QUALITY_ORDER,
     enhance, socketGem, socketCount, setBonuses, equippedSetCounts,
     bulkSell, bulkSellPreview, statScore, powerScore,
@@ -407,6 +433,9 @@
       if (q.classReq && q.classReq !== G.classId) return false;
       if (q.reqLevel && G.level < q.reqLevel) return false;
       if (q.prereq) for (const p of q.prereq) if (!G.questsDone[p]) return false;
+      if (q.langReq && !(G.langs && G.langs[q.langReq])) return false;   // 需先在图书馆习得对应语言
+      // 隐藏任务：收集类需先拾得相关物品才会显现（条件触发，营造"发现"感）
+      if (q.type==='hidden' && q.objective && q.objective.kind==='collect' && countItem(q.objective.target) < 1) return false;
       return true;
     },
     accept(id) {
@@ -427,6 +456,7 @@
       if (q.requireAllOrder) return ['正义','善良','勇气','智慧','公正','自由'].every(c=>G.orderChapters[c]);
       const o = q.objective||{};
       if (o.kind==='collect' && o.count) return Systems.countItem(o.target) >= o.count;  // 收集类按背包实时持有数判定
+      if (o.kind==='climb' && o.count) return (st.prog||0) >= o.count;                    // 攀登类按进度
       if (st.status==='done') return true;
       if (!o.count) return false;
       return st.prog >= o.count;

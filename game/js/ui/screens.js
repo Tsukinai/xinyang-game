@@ -45,9 +45,13 @@
       return `<button ${lock?'disabled':''} onclick="${lock?'':fn}"><div style="font-size:18px">${lock?'🔒':i}</div>
         <div class="tiny">${E(t)}</div>${lock?`<div class="tiny" style="color:var(--gold-d)">Lv${req} 解锁</div>`:''}</button>`;
     }).join('')}</div>`;
-    const npcs=(city.npcs||[]).map(n=>`<div class="card btn" onclick="Act.talkNpc('${n.id}')">
-      <div class="ct"><span class="ico">${n.icon}</span><span class="nm">${E(n.name)}</span><span class="rt">${E(n.role)}</span></div>
-      <div class="ds">${E(n.dialog)}</div></div>`).join('');
+    const npcs=(city.npcs||[]).map(n=>{
+      const hasQuest=Object.values(DATA.quests).some(q=>q.cityId===G.cityId&&q.giver===n.name&&Quests.isAvailable(q.id));
+      const talked=G.talkedNpcs&&G.talkedNpcs[G.cityId+':'+n.id];
+      const mark=hasQuest?' <span class="q-gold">❗</span>':(!talked?' <span class="reddot"></span>':'');
+      return `<div class="card btn" onclick="Act.talkNpc('${n.id}')">
+      <div class="ct"><span class="ico">${n.icon}</span><span class="nm">${E(n.name)}${mark}</span><span class="rt">${hasQuest?'<span class="q-gold">可接任务</span>':(!talked?'<span class="dim">未对话</span>':E(n.role))}</span></div>
+      <div class="ds">${E(n.dialog)}</div></div>`;}).join('');
     return `<h2 class="title">${city.icon} ${E(city.name)}<small>推荐 Lv${city.recommendLevel[0]}-${city.recommendLevel[1]}</small></h2>
       <div class="narr">${E(city.desc)}</div>
       <h3 class="sub">⚔️ 冒险</h3>${gx(adv)}
@@ -125,10 +129,10 @@
     const slotsOrder=['weapon','offhand','head','shoulder','chest','hand','waist','legs','feet','cloak','neck','ring1','ring2','trinket'];
     // 已装备：紧凑双列
     const eq=slotsOrder.map(s=>{ const it=G.equip[s]; const d=it?UI.itemDef(it):null;
-      return `<div class="eqcell${it?'':' empty'}" onclick="${it?`Act.itemModal('equip','${s}')`:''}">
+      return `<div class="eqcell${it?'':' empty'}" onclick="Act.itemModal('equip','${s}')">
         <span class="ei">${slotIcon(s)}</span>
-        <div class="ec"><div class="es">${DATA.slots[s]}</div>
-          ${it?`<div class="en ${UI.qcls(d.quality)}">${E(d.name)}${it.plus?' +'+it.plus:''}</div>`:'<div class="en dim">空</div>'}</div></div>`;
+        <div class="ec"><div class="es">${DATA.slots[s]}${d?` <span class="q-gold">Lv${d.reqLevel||1}</span>`:''}</div>
+          ${it?`<div class="en ${UI.qcls(d.quality)}">${E(d.name)}${it.plus?' +'+it.plus:''}</div>`:'<div class="en dim">空 · 点击装备</div>'}</div></div>`;
     }).join('');
     // 背包分类（保留原索引用于 itemModal）
     const cats=[
@@ -141,7 +145,11 @@
     const catOf=d=>{ for(let c=0;c<cats.length;c++) if(cats[c].test(d)) return c; return cats.length-1; };
     const groups=cats.map(()=>[]);
     for(const e of entries) groups[catOf(e.d)].push(e);
-    groups[0].sort((a,b)=>slotsOrder.indexOf(a.d.slot)-slotsOrder.indexOf(b.d.slot)); // 装备按槽位排序
+    // 装备排序：品质降序 → 战力降序 → 槽位（好装备排前）
+    const QRANK={white:0,bronze:1,green:1,silver:2,blue:2,purple:3,gold:4,dark:5,epic:6,legend:7,divine:8,artifact:9};
+    const score=it=>window.Systems?Systems.statScore(Systems.itemStats(it)):0;
+    groups[0].sort((a,b)=>{ const qa=QRANK[a.d.quality]||0, qb=QRANK[b.d.quality]||0; if(qb!==qa) return qb-qa;
+      const s=score(b.it)-score(a.it); if(s) return s; return slotsOrder.indexOf(a.d.slot)-slotsOrder.indexOf(b.d.slot); });
     let tab=UI.state._bagTab||0; if(tab>=cats.length) tab=0;
     const tabBtns=cats.map((c,ci)=>`<button class="segbtn${ci===tab?' on':''}" onclick="Act.bagTab(${ci})">${c.name}<span class="dim">${groups[ci].length}</span></button>`).join('');
     const cell=({it,i,d})=>`<div class="bagcell ${UI.qcls(d.quality)}" onclick="Act.itemModal('bag',${i})">
@@ -151,6 +159,7 @@
     const pNon=Systems.bulkSellPreview('nonclass'), pLow=Systems.bulkSellPreview('lowlevel');
     return `<h2 class="title">🎒 背包与装备<small>${money(G.gold)}</small></h2>
       <h3 class="sub">已装备</h3><div class="eqgrid">${eq}</div>
+      <div class="btns"><button class="primary" onclick="Act.autoEquip()">⚡ 一键装备最优</button></div>
       <h3 class="sub">背包（${(G.bag||[]).length}）</h3>
       <div class="seg">${tabBtns}</div>
       <div class="btns">
@@ -191,7 +200,7 @@
           <span class="rt ${done?'q-gold':''}">${done?'可交付':Quests.progressText(id)}</span></div>
         <div class="ds">${E(q.desc)}</div>
         <div class="tiny dim" style="margin-top:4px">目标：${E((q.objective||{}).label||'')} ${q.objective&&q.objective.count?'('+Quests.progressText(id)+')':''}</div>
-        <div class="btns">${done?`<button class="primary" onclick="Act.turnIn('${id}')">交付任务</button>`:`<button class="ghost" onclick="Act.trackQuest('${id}')">查看奖励</button>`}</div></div>`;
+        <div class="btns">${done?`<button class="primary" onclick="Act.turnIn('${id}')">交付任务</button>`:(q.objective&&q.objective.kind==='climb'?`<button class="primary" onclick="Act.climb('${id}')">🪜 继续攀登</button>`:`<button class="ghost" onclick="Act.trackQuest('${id}')">查看奖励</button>`)}</div></div>`;
     }).join('');
     const avail=Object.values(DATA.quests).filter(q=>q.cityId===G.cityId&&Quests.isAvailable(q.id)).map(q=>`
       <div class="card btn" onclick="Act.acceptQuest('${q.id}')">
