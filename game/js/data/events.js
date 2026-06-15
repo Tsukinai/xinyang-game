@@ -42,7 +42,7 @@ window.DATA = window.DATA || {};
   function maybeEvent(zone){
     if (!chance(0.22)) return null;   // 22% 触发随机事件
     const roll = pickW([
-      {t:'chest', w:3}, {t:'fortune', w:3}, {t:'ambush', w:2}, {t:'shrine', w:1.5}, {t:'merchant', w:1.5}, {t:'omen', w:1},
+      {t:'chest', w:3}, {t:'fortune', w:3}, {t:'ambush', w:2}, {t:'shrine', w:1.5}, {t:'merchant', w:1.5}, {t:'omen', w:1}, {t:'demonboss', w:1},
     ]);
     const lvl = rand(zone.levelRange[0], zone.levelRange[1]);
     switch(roll.t){
@@ -68,6 +68,13 @@ window.DATA = window.DATA || {};
           inst=c; if (!DATA.canClassUse || DATA.canClassUse(c, G.classId)) break; } }
         const price = inst ? Math.round(inst.value*1.6) : 50;
         return { type:'merchant', item:inst, price, text:`行脚商人向你兜售一件适合你的装备（${price}铜币）：` };
+      }
+      case 'demonboss': {
+        const m = encounter(zone); if(!m) return null;
+        m.hp = Math.round(m.hp*4.2); m.maxHp = m.hp; m.atk = Math.round(m.atk*1.6); m.type = 'boss';
+        m.name = '恶魔化·'+m.name; m.icon = '😈';
+        m.xp = Math.round((m.xp||m.level*8)*5); m.goldMin = Math.round((m.goldMin||5)*4); m.goldMax = Math.round((m.goldMax||10)*4);
+        return { type:'demonboss', monster:m, text:`地面骤然裂开，黑气翻涌——【${m.name}】被恶魔之力扭曲降临！它血厚攻高、会蓄力大招，但战利品与经验远超寻常。` };
       }
       case 'omen': default: {
         return { type:'omen', text:`天空划过一道流星——你接住了坠落的星辉，获得【天陨祝福】：回满状态，且下一场战斗攻击与暴击提升！`, buff:true };

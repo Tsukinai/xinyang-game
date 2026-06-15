@@ -199,6 +199,10 @@
           <button class="ghost" onclick="Act.exploreZone('${zoneId}')">无视它</button></div>`;
       } else if(ev.type==='shrine'){
         inner=`<div class="btns"><button class="primary" onclick="Act.rollDice('${zoneId}')">🎲 投掷命骰</button>${cont}</div>`;
+      } else if(ev.type==='demonboss' && ev.monster){
+        UI.state._demon={m:ev.monster, zoneId};
+        inner=`<div class="castbar">😈 ${UI.esc(ev.monster.name)} Lv${ev.monster.level} · 恶魔化领主——血厚攻高、会蓄力大招，爆率与经验大增！</div>
+          <div class="btns"><button class="primary" onclick="Act.fightDemon()">⚔ 迎战</button><button class="ghost" onclick="Act.exploreZone('${zoneId}')">撤退</button></div>`;
       } else if(ev.type==='merchant' && ev.item){
         UI.state._merchant=ev;
         inner=`<div>${UI.itemTip(ev.item)}</div>${UI.itemCompare(ev.item)}<div class="btns"><button class="primary" onclick="Act.buyMerchant('${zoneId}')">购买（${ev.price}铜）</button>${cont}</div>`;
@@ -233,6 +237,10 @@
         <div class="btns"><button class="primary" onclick="Act.exploreZone('${zoneId}')">继续探索</button><button class="ghost" onclick="UI.closeModal();UI.go('zonelist')">返回</button></div>`);
       UI.renderStatus();
     },
+    fightDemon(){ const d=UI.state._demon; if(!d||!d.m){ CM(); return; }
+      UI.state.ctx={zoneId:d.zoneId}; UI.state._demon=null;
+      Combat.start({ enemies:[d.m], zoneId:d.zoneId, dropLuck:24, onEnd:()=>{ render(); } });
+      UI.state.screen='combat'; CM(); render(); if(UI.state.auto) this._autoTick(); },
     buyMerchant(zoneId){ const ev=UI.state._merchant; if(!ev||!ev.item){ CM(); return; }
       if(G.gold<ev.price){ T('铜币不足'); return; }
       Systems.addGold(-ev.price); Systems.addInstance(ev.item); UI.state._merchant=null; Save.save();
