@@ -4,8 +4,12 @@
   function render(){
     const scr=UI.$('screen'); if(!scr) return;
     const fn=Screens[UI.state.screen]||Screens.town;
-    try { scr.innerHTML=fn(UI.state.ctx); }
-    catch(e){ scr.innerHTML='<div class="empty">渲染出错：'+UI.esc(e.message)+'</div>'; console.error(e); }
+    let body, footer='';
+    try { const out=fn(UI.state.ctx);
+      if(out&&typeof out==='object'){ body=out.body; footer=out.footer||''; } else body=out; }
+    catch(e){ body='<div class="empty">渲染出错：'+UI.esc(e.message)+'</div>'; footer=''; console.error(e); }
+    scr.innerHTML=body;
+    const ab=UI.$('actionbar'); if(ab){ ab.innerHTML=footer; ab.classList.toggle('show', !!footer); }
     UI.renderStatus(); UI.renderNav();
     if(UI.state.screen==='combat'){ const lg=UI.$('log'); if(lg) lg.scrollTop=lg.scrollHeight; }
     scr.scrollTop=UI.state._keepScroll?scr.scrollTop:0; UI.state._keepScroll=false;
@@ -96,6 +100,7 @@
       const cmp=(!isEquip && d.slot)?UI.itemCompare(it):'';
       M(`<div>${UI.itemTip(it)}</div>${cmp}<div class="btns">${btns.join('')}<button class="ghost" onclick="UI.closeModal()">关闭</button></div>`);
     },
+    bagTab(i){ UI.state._bagTab=i; UI.state._keepScroll=true; render(); },
     equipBag(i){ const r=Systems.equip(i); if(r&&r.ok){ Save.save(); CM(); render(); T('已装备'); } else T((r&&r.why)||'无法装备'); },
     unequip(slot){ Systems.unequip(slot); Save.save(); CM(); render(); T('已卸下'); },
     useBag(i){ const it=G.bag[i]; if(!it) return; const d=DATA.items[it.id]; if(!d||!d.use) return;

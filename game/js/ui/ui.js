@@ -61,7 +61,9 @@
     const slot=equipTargetSlot(d);
     const old=G.equip[slot];
     const slotName=DATA.slots[slot]||d.type||'';
-    if(!old) return `<div class="cmp"><div class="tiny dim">该部位（${slotName}）当前为空，装备后净增上方全部属性。</div></div>`;
+    if(!old){ const gain=window.Systems?Systems.statScore(window.Systems.itemStats(it)):0;
+      return `<div class="cmp"><div class="tiny dim">该部位（${slotName}）当前为空，装备后净增上方全部属性。</div>
+        <div class="stats" style="grid-template-columns:1fr"><div class="kv"><span>⚔️ 装备战力</span><b style="color:#7be07b">+${gain}</b></div></div></div>`; }
     const ns=window.Systems?Systems.itemStats(it):(d.stats||{});
     const os=window.Systems?Systems.itemStats(old):((itemDef(old)||{}).stats||{});
     const map={str:'力量',agi:'敏捷',int:'智力',sta:'体质',spi:'精神',atk:'攻击',sp:'法术强度',armor:'护甲',hp:'生命',mp:'法力',crit:'暴击%',dodge:'闪避%',haste:'急速'};
@@ -70,8 +72,12 @@
       const col=dv>0?'#7be07b':dv<0?'#e07b7b':'var(--ink-dim)'; const sign=dv>0?'+':'';
       return `<div class="kv"><span>${map[k]}</span><b>${ov} → ${nv} <span style="color:${col}">(${sign}${dv})</span></b></div>`;
     }).join('');
+    let scoreRow='';
+    if(window.Systems){ const sv=Systems.statScore(ns)-Systems.statScore(os);
+      const col=sv>0?'#7be07b':sv<0?'#e07b7b':'var(--ink-dim)';
+      scoreRow=`<div class="kv"><span>⚔️ 装备战力</span><b style="color:${col}">${sv>0?'+':''}${sv}</b></div>`; }
     return `<div class="cmp"><div class="tiny dim">对比已穿（${slotName}）：${itemName(old)}${old.plus?' +'+old.plus:''}</div>
-      <div class="stats" style="grid-template-columns:1fr">${rows}</div></div>`;
+      <div class="stats" style="grid-template-columns:1fr">${scoreRow}${rows}</div></div>`;
   }
 
   // ---------- 状态栏 ----------

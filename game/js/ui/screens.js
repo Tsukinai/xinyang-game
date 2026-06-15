@@ -27,28 +27,28 @@
   // ============ 城镇 ============
   function town(){
     const city=DATA.cities[G.cityId]; const sv=city.services||{};
-    const acts=[];
-    acts.push(['📜','任务',`Act.go('quests')`]);
-    if(city.zones&&city.zones.length) acts.push(['🌾','野外练级',`Act.go('zonelist')`]);
-    if(city.dungeons&&city.dungeons.length) acts.push(['🏰','副本',`Act.go('dungeonlist')`]);
-    if(sv.shop) acts.push(['🛒','商店',`Act.go('shop')`]);
-    if(sv.trainer) acts.push(['🎓','训练师',`Act.trainer()`]);
-    if(sv.forge) acts.push(['⚒️','强化镶嵌',`Act.go('forge')`]);
-    acts.push(['🛏️','休整恢复',`Act.rest()`]);
-    acts.push(['🧵','生活技能',`Act.go('profession')`]);
-    acts.push(['🐎','坐骑宠物',`Act.go('stable')`]);
-    acts.push(['🐮','公会',`Act.go('guild')`]);
-    acts.push(['⚔️','战场国战',`Act.go('battleground')`]);
-    acts.push(['🎲','神龛·命骰',`Act.diceScreen()`]);
-    if(sv.library) acts.push(['📚','图书馆',`Act.library()`]);
-    if(sv.auction) acts.push(['💰','拍卖行',`Act.auction()`]);
-    acts.push(['🗺️','传送',`Act.go('map')`]);
+    const adv=[['📜','任务',`Act.go('quests')`]];
+    if(city.zones&&city.zones.length) adv.push(['🌾','野外练级',`Act.go('zonelist')`]);
+    if(city.dungeons&&city.dungeons.length) adv.push(['🏰','副本',`Act.go('dungeonlist')`]);
+    adv.push(['⚔️','战场国战',`Act.go('battleground')`]);
+    const svc=[];
+    if(sv.shop) svc.push(['🛒','商店',`Act.go('shop')`]);
+    if(sv.trainer) svc.push(['🎓','训练师',`Act.trainer()`]);
+    if(sv.forge) svc.push(['⚒️','强化镶嵌',`Act.go('forge')`]);
+    svc.push(['🛏️','休整恢复',`Act.rest()`]);
+    if(sv.auction) svc.push(['💰','拍卖行',`Act.auction()`]);
+    if(sv.library) svc.push(['📚','图书馆',`Act.library()`]);
+    const grow=[['🧵','生活技能',`Act.go('profession')`],['🐎','坐骑宠物',`Act.go('stable')`],
+      ['🐮','公会',`Act.go('guild')`],['🎲','神龛·命骰',`Act.diceScreen()`],['🗺️','传送',`Act.go('map')`]];
+    const gx=arr=>`<div class="grid3">${arr.map(([i,t,fn])=>`<button onclick="${fn}"><div style="font-size:18px">${i}</div><div class="tiny">${t}</div></button>`).join('')}</div>`;
     const npcs=(city.npcs||[]).map(n=>`<div class="card btn" onclick="Act.talkNpc('${n.id}')">
       <div class="ct"><span class="ico">${n.icon}</span><span class="nm">${E(n.name)}</span><span class="rt">${E(n.role)}</span></div>
       <div class="ds">${E(n.dialog)}</div></div>`).join('');
     return `<h2 class="title">${city.icon} ${E(city.name)}<small>推荐 Lv${city.recommendLevel[0]}-${city.recommendLevel[1]}</small></h2>
       <div class="narr">${E(city.desc)}</div>
-      <div class="grid3">${acts.map(([i,t,fn])=>`<button onclick="${fn}"><div style="font-size:18px">${i}</div><div class="tiny">${t}</div></button>`).join('')}</div>
+      <h3 class="sub">⚔️ 冒险</h3>${gx(adv)}
+      <h3 class="sub">🏪 城镇服务</h3>${gx(svc)}
+      <details class="more"><summary>⋯ 成长与其它</summary>${gx(grow)}</details>
       <h3 class="sub">城中人物</h3><div class="list">${npcs||'<div class="empty">空无一人</div>'}</div>`;
   }
 
@@ -91,6 +91,7 @@
     const titles=(G.titles||[]).map(t=>`<span class="tag q-gold" onclick="Act.setTitle('${E(t)}')" style="cursor:pointer">${E(t)}</span>`).join(' ')||'<span class="dim tiny">暂无</span>';
     const order=['正义','善良','勇气','智慧','公正','自由'].map(c=>`<span class="tag ${G.orderChapters[c]?'q-gold':''}" style="opacity:${G.orderChapters[c]?1:.35}">${c}</span>`).join(' ');
     return `<h2 class="title">🧝 ${E(G.name)}<small>${cls.icon} ${cls.name}${G.spec?'·'+(cls.specs.find(s=>s.id===G.spec)||{}).name:''}</small></h2>
+      <div class="powerbox">⚔️ 战力 <b>${Systems.powerScore()}</b></div>
       <div class="card"><div class="kv"><span>等级</span><b>Lv${G.level}${G.level>=Systems.LEVEL_CAP?'（满级）':''}</b></div>
         <div class="kv"><span>阵营/帝国</span><b>${DATA.empires[G.empire].name}</b></div>
         <div class="kv"><span>爵位</span><b>${E(G.noble)}</b></div>
@@ -110,39 +111,41 @@
   // ============ 背包 / 装备 ============
   function bag(){
     const slotsOrder=['weapon','offhand','head','shoulder','chest','hand','waist','legs','feet','cloak','neck','ring1','ring2','trinket'];
-    const eq=slotsOrder.map(s=>{ const it=G.equip[s];
-      return `<div class="card btn" onclick="${it?`Act.itemModal('equip','${s}')`:''}" style="${it?'':'opacity:.5'}">
-        <div class="ct"><span class="ico">${slotIcon(s)}</span>
-          <div><div class="tiny dim">${DATA.slots[s]}</div>${it?iname(it):'<span class="dim tiny">（空）</span>'}</div></div></div>`;
+    // 已装备：紧凑双列
+    const eq=slotsOrder.map(s=>{ const it=G.equip[s]; const d=it?UI.itemDef(it):null;
+      return `<div class="eqcell${it?'':' empty'}" onclick="${it?`Act.itemModal('equip','${s}')`:''}">
+        <span class="ei">${slotIcon(s)}</span>
+        <div class="ec"><div class="es">${DATA.slots[s]}</div>
+          ${it?`<div class="en ${UI.qcls(d.quality)}">${E(d.name)}${it.plus?' +'+it.plus:''}</div>`:'<div class="en dim">空</div>'}</div></div>`;
     }).join('');
     // 背包分类（保留原索引用于 itemModal）
     const cats=[
-      {name:'⚔️ 装备', test:d=>!!d.slot},
-      {name:'🧪 消耗品', test:d=>d.use && !(d.use.learnSkill||d.use.learnLife)},
-      {name:'📖 技能书', test:d=>d.use && (d.use.learnSkill||d.use.learnLife)},
-      {name:'💎 材料/其他', test:()=>true},
+      {name:'⚔️装备', test:d=>!!d.slot},
+      {name:'🧪消耗', test:d=>d.use && !(d.use.learnSkill||d.use.learnLife)},
+      {name:'📖技能书', test:d=>d.use && (d.use.learnSkill||d.use.learnLife)},
+      {name:'💎材料', test:()=>true},
     ];
     const entries=(G.bag||[]).map((it,i)=>({it,i,d:UI.itemDef(it)}));
     const catOf=d=>{ for(let c=0;c<cats.length;c++) if(cats[c].test(d)) return c; return cats.length-1; };
     const groups=cats.map(()=>[]);
     for(const e of entries) groups[catOf(e.d)].push(e);
     groups[0].sort((a,b)=>slotsOrder.indexOf(a.d.slot)-slotsOrder.indexOf(b.d.slot)); // 装备按槽位排序
-    const renderItem=({it,i,d})=>`<div class="card btn" onclick="Act.itemModal('bag',${i})">
-        <div class="ct"><span class="ico">${d.icon||'📦'}</span>
-          <div>${iname(it)}${it.qty>1?` <span class="dim tiny">×${it.qty}</span>`:''}
-          <div class="ds">${E(d.type||'')}${d.slot?' · '+(DATA.slots[d.slot]||''):''}</div></div></div></div>`;
-    const sections=cats.map((c,ci)=>{ if(!groups[ci].length) return '';
-      return `<h4 class="bagcat">${c.name}<span class="dim tiny"> ${groups[ci].length}</span></h4>
-        <div class="list">${groups[ci].map(renderItem).join('')}</div>`; }).join('');
+    let tab=UI.state._bagTab||0; if(tab>=cats.length) tab=0;
+    const tabBtns=cats.map((c,ci)=>`<button class="segbtn${ci===tab?' on':''}" onclick="Act.bagTab(${ci})">${c.name}<span class="dim">${groups[ci].length}</span></button>`).join('');
+    const cell=({it,i,d})=>`<div class="bagcell ${UI.qcls(d.quality)}" onclick="Act.itemModal('bag',${i})">
+      <span class="bi">${d.icon||'📦'}</span>${it.qty>1?`<span class="qty">${it.qty}</span>`:''}
+      <div class="bn">${E(d.name)}${it.plus?' +'+it.plus:''}</div></div>`;
+    const grid=groups[tab].length?`<div class="baggrid">${groups[tab].map(cell).join('')}</div>`:'<div class="empty">这一类暂时是空的</div>';
     const pNon=Systems.bulkSellPreview('nonclass'), pLow=Systems.bulkSellPreview('lowlevel');
     return `<h2 class="title">🎒 背包与装备<small>${money(G.gold)}</small></h2>
-      <h3 class="sub">已装备</h3><div class="list">${eq}</div>
+      <h3 class="sub">已装备</h3><div class="eqgrid">${eq}</div>
       <h3 class="sub">背包（${(G.bag||[]).length}）</h3>
+      <div class="seg">${tabBtns}</div>
       <div class="btns">
         <button class="ghost" onclick="Act.bulkSell('nonclass')">一键卖·非本职业(${pNon.count})</button>
         <button class="ghost" onclick="Act.bulkSell('lowlevel')">一键卖·低级装备(${pLow.count})</button>
       </div>
-      ${sections||'<div class="empty">背包空空如也</div>'}`;
+      ${grid}`;
   }
   function slotIcon(s){ return ({weapon:'🗡️',offhand:'🛡️',head:'⛑️',shoulder:'🧣',chest:'🦺',hand:'🧤',waist:'🩹',legs:'👖',feet:'👢',cloak:'🧥',neck:'📿',ring1:'💍',ring2:'💍',trinket:'🎖️'})[s]||'📦'; }
 
@@ -238,22 +241,25 @@
       return `<button class="ghost" onclick="Act.cItem('${b.id}')">${d.icon||'🧪'}${E(d.name)}×${b.qty}</button>`; }).join('');
     const auto=UI.state.auto;
     const log=st.log.map(l=>`<div class="l ${l.cls}">${l.text}</div>`).join('');
-    return `<h2 class="title">⚔ 战斗${st.total>1?`<small>进度 ${st.total-st.remaining}/${st.total}</small>`:''}${auto?' <small class="q-gold">自动中</small>':''}</h2>
+    const fxE=st.fxEnemy?`<span class="floatdmg${st.fxEnemy.crit?' crit':''}">-${st.fxEnemy.amount}${st.fxEnemy.crit?' 暴击!':''}</span>`:'';
+    const fxP=st.fxPlayer?`<span class="floatdmg taken">-${st.fxPlayer.amount}</span>`:'';
+    const body=`<h2 class="title">⚔ 战斗${st.total>1?`<small>进度 ${st.total-st.remaining}/${st.total}</small>`:''}${auto?' <small class="q-gold">自动中</small>':''}</h2>
       <div id="combat">
         <div class="vs">
-          <div class="fighter"><div class="fn">${cls.icon}${E(G.name)} <span class="tiny">Lv${G.level}</span></div>
+          <div class="fighter">${fxP}<div class="fn">${cls.icon}${E(G.name)} <span class="tiny">Lv${G.level}</span></div>
             <div class="tiny dim">血量见顶部状态栏</div>
             <div class="tiny" style="color:#7be07b">${statusP||'&nbsp;'}</div></div>
-          <div class="fighter enemy">${e?`<div class="fn">${e.icon}${E(e.name)} ${enemyTag}<span class="tiny">Lv${e.level}</span></div>
+          <div class="fighter enemy">${fxE}${e?`<div class="fn">${e.icon}${E(e.name)} ${enemyTag}<span class="tiny">Lv${e.level}</span></div>
             <div class="cbar"><i style="width:${ehpPct}%"></i></div><div class="tiny dim">${e.hp}/${e.maxHp}</div>
             <div class="tiny" style="color:#ff9">${statusE||'&nbsp;'}</div>`:'虚空'}</div>
         </div>
         <div id="log">${log}</div>
-        <div class="btns"><button class="primary" onclick="Act.cAttack()">普通攻击</button>${skBtns}</div>
-        <div class="btns">${pots}<button class="ghost" onclick="Act.combatItems()">🎒 物品</button>
-          <button class="${auto?'primary':'ghost'}" onclick="Act.toggleAuto()">${auto?'⏸ 停自动':'▶ 自动战斗'}</button>
-          <button class="ghost" onclick="Act.cFlee()">逃跑</button></div>
       </div>`;
+    const footer=`<div class="btns combat-skills"><button class="primary" onclick="Act.cAttack()">⚔ 普攻</button>${skBtns}</div>
+      <div class="btns">${pots}<button class="ghost" onclick="Act.combatItems()">🎒 物品</button>
+        <button class="${auto?'primary':'ghost'}" onclick="Act.toggleAuto()">${auto?'⏸ 停自动':'▶ 自动'}</button>
+        <button class="ghost" onclick="Act.cFlee()">逃跑</button></div>`;
+    return { body, footer };
   }
   function combatEnd(st){
     const r=st.result||{};

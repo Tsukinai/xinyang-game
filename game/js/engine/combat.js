@@ -23,6 +23,7 @@
     C = {
       spec, queue, idx: 0, cur: queue[0] || null,
       turn: 0, over: false, result: null,
+      fxEnemy: null, fxPlayer: null,   // 最近一次伤害飘字
       pBuffs: [], pShield: 0, pStun: 0, cooldowns: {},
       acc: { xp: 0, gold: 0, loot: {}, genLoot: [] },   // 累计奖励
       logLines: [],
@@ -34,6 +35,7 @@
   // ---------- 玩家行动 ----------
   function act(action) {
     if (!C || C.over) return state();
+    C.fxEnemy = null; C.fxPlayer = null;   // 清除上一次飘字
     // 玩家被眩晕
     if (C.pStun > 0) {
       pushLog('miss', `你被控制，无法行动！`);
@@ -170,6 +172,7 @@
     if (C.pShield > 0) { const ab = Math.min(C.pShield, raw); C.pShield -= ab; raw -= ab;
       if (ab>0) pushLog('sys', `护盾吸收 ${ab} 伤害。`); }
     G.hpCur = Math.max(0, G.hpCur - raw);
+    C.fxPlayer = { amount: raw, crit };
     pushLog(crit?'crit':'dmg', `${label}，对你造成 ${raw} 伤害${crit?'（暴击）':''}。`);
     if (G.hpCur <= 0) death();
   }
@@ -226,6 +229,7 @@
 
   function applyToEnemy(dmg, label) {
     if (!C.cur) return;
+    C.fxEnemy = { amount: dmg.amount, crit: dmg.crit };
     C.cur.hp = Math.max(0, C.cur.hp - dmg.amount);
     pushLog(dmg.crit?'crit':'dmg', `${label}，造成 ${dmg.amount} 伤害${dmg.crit?'（暴击！）':''}。`);
     if (C.cur.hp<=0) pushLog('sys', `${C.cur.name} 被击败！`);
@@ -375,6 +379,7 @@
       remaining: C.queue.length - C.idx - 1,
       total: C.queue.length,
       cooldowns: C.cooldowns, pBuffs: C.pBuffs, pShield: C.pShield, pStun: C.pStun,
+      fxEnemy: C.fxEnemy, fxPlayer: C.fxPlayer,
       log: C.logLines,
     };
   }

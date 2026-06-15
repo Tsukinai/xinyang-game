@@ -43,7 +43,34 @@ h2.title{font-size:17px;color:var(--gold);margin:2px 0 10px;
 h2.title small{margin-left:auto;font-size:11px;color:var(--ink-dim);font-weight:400}
 h3.sub{font-size:14px;color:var(--gold-d);margin:14px 0 6px;letter-spacing:.5px}
 h4.bagcat{font-size:12px;color:var(--ink-dim);margin:10px 0 4px;font-weight:600}
+.eqgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.eqcell{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);
+  border-radius:6px;padding:6px 8px;min-height:44px;cursor:pointer}
+.eqcell.empty{opacity:.42;cursor:default}
+.eqcell .ei{font-size:18px;flex:none}
+.eqcell .ec{min-width:0}
+.eqcell .es{font-size:10px;color:var(--ink-dim);line-height:1.1}
+.eqcell .en{font-size:12px;font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:flex;gap:4px;margin:8px 0 4px;flex-wrap:wrap}
+.segbtn{flex:1;min-width:60px;padding:7px 4px;font-size:12px;border-radius:5px;box-shadow:none;
+  background:var(--panel);border:1px solid var(--line);color:var(--ink-dim);letter-spacing:0}
+.segbtn.on{background:#2a2110;border-color:var(--gold);color:var(--gold)}
+.segbtn .dim{margin-left:3px;font-size:10px;opacity:.65}
+.baggrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+.bagcell{position:relative;background:var(--panel);border:1.5px solid currentColor;border-radius:6px;
+  padding:8px 3px 5px;text-align:center;cursor:pointer;min-height:64px}
+.bagcell .bi{font-size:23px;display:block;line-height:1}
+.bagcell .bn{font-size:10px;line-height:1.15;margin-top:4px;color:var(--ink);
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.bagcell .qty{position:absolute;top:1px;right:4px;font-size:11px;color:var(--gold);font-weight:700;text-shadow:0 1px 2px #000}
 .cmp{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.powerbox{margin:8px 0;padding:8px 12px;border-radius:6px;text-align:center;font-size:14px;
+  color:var(--gold);background:linear-gradient(#2a2110,#1c1710);border:1px solid var(--gold-d)}
+.powerbox b{font-size:20px;color:var(--gold);margin-left:4px;font-variant-numeric:tabular-nums}
+details.more{margin-top:10px}
+details.more summary{font-size:13px;color:var(--gold-d);cursor:pointer;padding:6px 0;list-style:none;letter-spacing:.5px}
+details.more summary::-webkit-details-marker{display:none}
+details.more[open] summary{color:var(--gold)}
 p{margin:6px 0}
 .dim{color:var(--ink-dim)}
 .tiny{font-size:12px}
@@ -94,17 +121,33 @@ button.full,.b.full{width:100%;text-align:center}
 
 /* ---------- 战斗 ---------- */
 #combat .vs{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}
-.fighter{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px}
+.fighter{flex:1;position:relative;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px}
 .fighter .fn{font-weight:700;font-size:13px;display:flex;justify-content:space-between}
 .fighter.enemy{border-color:#5a2420}
 .cbar{height:9px;border:1px solid #000;border-radius:3px;background:#000;margin-top:5px;overflow:hidden}
 .cbar i{display:block;height:100%;background:linear-gradient(#c43a2f,#7a1d16);transition:width .25s}
 .cbar.m i{background:linear-gradient(#4a78c8,#27407a)}
+.floatdmg{position:absolute;top:4px;left:50%;transform:translateX(-50%);z-index:5;
+  font-weight:700;font-size:18px;color:#ff7a5e;text-shadow:0 1px 3px #000;pointer-events:none;
+  white-space:nowrap;animation:floatup .9s ease-out forwards}
+.floatdmg.taken{color:#ff4d4d}
+.floatdmg.crit{font-size:24px;color:#ffd23f}
+@keyframes floatup{0%{opacity:0;transform:translate(-50%,8px) scale(.7)}
+  25%{opacity:1;transform:translate(-50%,-2px) scale(1.1)}
+  100%{opacity:0;transform:translate(-50%,-26px) scale(1)}}
+.combat-skills button{font-size:13px;padding:7px 11px}
 #log{margin-top:10px;background:#0a0805;border:1px solid var(--line);border-radius:5px;
-  padding:8px 9px;height:170px;overflow-y:auto;font-size:12.5px;line-height:1.5}
+  padding:8px 9px;height:clamp(120px,32vh,220px);overflow-y:auto;font-size:12.5px;line-height:1.5}
 #log .l{margin:2px 0;border-bottom:1px solid #1a150d;padding-bottom:2px}
 .dmg{color:#ff7a5e} .heal{color:#7be07b} .crit{color:#ffd23f;font-weight:700}
 .miss{color:var(--ink-dim)} .sys{color:var(--blue)} .loot{color:var(--q-gold)}
+
+/* ---------- 底部固定操作栏 ---------- */
+#actionbar{display:none;position:sticky;bottom:0;z-index:31;
+  background:linear-gradient(#1a140c,#100c07);border-top:1px solid var(--gold-d);padding:8px 10px}
+#actionbar.show{display:block}
+#actionbar .btns{margin:0}
+#actionbar .btns+.btns{margin-top:6px}
 
 /* ---------- 底部导航 ---------- */
 #nav{position:sticky;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(6,1fr);

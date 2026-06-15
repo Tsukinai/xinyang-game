@@ -315,12 +315,17 @@
   function uid(){ return (G.__uc=(G.__uc||0)+1); }
   function qualityRank(q){ return QUALITY_ORDER.indexOf(q); }
 
+  // ===== 战力评分 =====
+  const SCORE_W = {str:2,agi:2,int:2,sta:2,spi:2,atk:1,sp:1,armor:1.5,hp:0.2,mp:0.1,crit:10,dodge:8,haste:5};
+  function statScore(s){ let v=0; for(const k in SCORE_W) v+=(s[k]||0)*SCORE_W[k]; return Math.round(v); }
+  function powerScore(){ return statScore({atk:G.atk,sp:G.sp,hp:G.maxHp,mp:G.maxMp,armor:G.armor,crit:G.crit,dodge:G.dodge,haste:G.haste}); }
+
   window.Systems = {
     LEVEL_CAP, xpToNext, recompute, fullHeal, restTick, gainXp, levelUp,
     allocate, resetAlloc, addItem, addInstance, removeItem, countItem, equip, unequip, canEquip,
     addGold, buy, sell, rollLoot, itemStats, finalAttr, rand, qualityRank, QUALITY_ORDER,
     enhance, socketGem, socketCount, setBonuses, equippedSetCounts,
-    bulkSell, bulkSellPreview,
+    bulkSell, bulkSellPreview, statScore, powerScore,
   };
 
   // ===================== 技能 =====================
