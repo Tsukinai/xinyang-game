@@ -145,6 +145,7 @@
     // ===== 野外探索 =====
     exploreZone(zoneId){
       const z=DATA.zones[zoneId]; if(!z){ T('无此区域'); return; }
+      if(UI.state._autoTimer){ clearTimeout(UI.state._autoTimer); UI.state._autoTimer=null; } // 避免自动续战与手动点击重复触发
       CM(); // 点击随机事件选项后关闭弹窗
       const ev=Events.maybeEvent(z);
       if(ev && ev.type!=='ambush'){ this._handleEvent(ev, zoneId); return; }
@@ -162,9 +163,8 @@
       if(ev.type==='omen'){ /* 预兆：临时鼓舞，下一场战斗略增益（简化为回满） */ Systems.fullHeal(); UI.renderStatus(); }
       let inner='';
       if(ev.type==='chest'){
-        const lp=G.lockpick||{learned:false,lv:1};
-        const label = lp.learned ? `开锁（熟练Lv${lp.lv}）` : (Systems.countItem('lockpick')>0?'用开锁器开启':'开锁（需技能/开锁器）');
-        inner=`<div class="btns"><button class="primary" onclick="Act.openChest(${ev.tier},'${zoneId}')">${label}</button>
+        UI.state._chestTries=5;   // 每个宝箱 5 次开锁机会
+        inner=`<div class="btns"><button class="primary" onclick="Act.openChest(${ev.tier},'${zoneId}')">${this.chestLabel()}</button>
           <button class="ghost" onclick="Act.exploreZone('${zoneId}')">无视它</button></div>`;
       } else if(ev.type==='shrine'){
         inner=`<div class="btns"><button class="primary" onclick="Act.rollDice('${zoneId}')">🎲 投掷命骰</button>${cont}</div>`;
@@ -174,9 +174,29 @@
       } else { inner=`<div class="btns">${cont}</div>`; }
       M(`<h3>🌟 奇遇</h3><div class="narr">${UI.esc(ev.text)}</div>${inner}`);
     },
+    chestLabel(){
+      const lp=G.lockpick||{learned:false,lv:1};
+      const tries=UI.state._chestTries!=null?UI.state._chestTries:5;
+      const base=lp.learned?`开锁 熟练Lv${lp.lv}`:(Systems.countItem('lockpick')>0?'用开锁器开启':'开锁（需技能/开锁器）');
+      return `${base}（剩${tries}次）`;
+    },
     openChest(tier, zoneId){
+      if(UI.state._chestTries==null) UI.state._chestTries=5;
       const r=Events.openChest(tier);
-      if(!r.ok){ T(r.why); return; }
+      if(!r.ok){
+        UI.state._chestTries--;
+        UI.renderStatus();   // 开锁器可能已消耗
+        if(UI.state._chestTries<=0){
+          M(`<h3>🔒 宝箱锁死</h3><div class="narr">${UI.esc(r.why)}<br>机关彻底卡死，再也打不开了。</div>
+            <div class="btns"><button class="primary" onclick="Act.exploreZone('${zoneId}')">继续探索</button>
+            <button class="ghost" onclick="UI.closeModal();UI.go('zonelist')">返回</button></div>`);
+        } else {
+          M(`<h3>🗃️ 上锁的宝箱</h3><div class="narr">${UI.esc(r.why)}<br>还可尝试 <b class="q-gold">${UI.state._chestTries}</b> 次。</div>
+            <div class="btns"><button class="primary" onclick="Act.openChest(${tier},'${zoneId}')">${this.chestLabel()}</button>
+            <button class="ghost" onclick="Act.exploreZone('${zoneId}')">放弃</button></div>`);
+        }
+        return;
+      }
       const loot=(r.items||[]).map(it=>`<div>${it.gen?UI.itemName(it):'<span class="'+UI.qcls(it.quality)+'">'+UI.esc(it.name)+'</span>'}</div>`).join('');
       M(`<h3 class="q-gold">开启成功！</h3><div class="narr">获得 ${UI.money(r.gold)}<br>${loot}${r.lockUp?`<br><b class="q-gold">开锁熟练度提升至 Lv${r.lockLv}！</b>`:''}</div>
         <div class="btns"><button class="primary" onclick="Act.exploreZone('${zoneId}')">继续探索</button><button class="ghost" onclick="UI.closeModal();UI.go('zonelist')">返回</button></div>`);
@@ -247,7 +267,16 @@
       if(!UI.state.auto || !(window.Combat&&Combat.active()) || UI.state.screen!=='combat'){ UI.state._autoTimer=null; return; }
       Combat.act(this._aiPick()); UI.state._keepScroll=true; render();
       if(UI.state.auto && Combat.active()) UI.state._autoTimer=setTimeout(()=>Act._autoTick(), 480);
-      else UI.state._autoTimer=null;
+      else { UI.state._autoTimer=null; this._autoContinue(); }
+    },
+    // 战斗结束后：野外胜利则延迟 2 秒自动继续探索（期间可点「停自动」退出）
+    _autoContinue(){
+      if(!UI.state.auto) return;
+      const st=Combat.state(); const r=st&&st.result; const ctx=UI.state.ctx||{};
+      if(!r || r.outcome!=='win' || !ctx.zoneId){ this.autoOff(); return; }
+      UI.state._autoTimer=setTimeout(()=>{
+        if(UI.state.auto && UI.state.ctx && UI.state.ctx.zoneId) Act.exploreZone(UI.state.ctx.zoneId);
+      }, 2000);
     },
 
     // ===== 强化 / 镶嵌 =====

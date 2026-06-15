@@ -271,12 +271,15 @@
       body=`<div class="narr">你脱离了战斗。</div>`;
     }
     const ctx=UI.state.ctx||{};
+    const autoNext=UI.state.auto && r.outcome==='win' && ctx.zoneId; // 自动续战中
     let btns='';
     if(r.outcome==='death') btns=`<button class="primary full" onclick="Act.go('town')">返回主城</button>`;
-    else if(ctx.zoneId) btns=`<button class="primary" onclick="Act.exploreZone('${ctx.zoneId}')">继续探索</button><button onclick="Act.go('zonelist')">返回</button>`;
+    else if(ctx.zoneId) btns=`<button class="primary" onclick="Act.exploreZone('${ctx.zoneId}')">继续探索</button>`
+      +(autoNext?`<button class="ghost" onclick="Act.autoOff();UI.go('zonelist')">⏸ 停自动</button>`:`<button onclick="Act.go('zonelist')">返回</button>`);
     else if(ctx.dungeonId) btns=`<button class="primary" onclick="Act.dungeonDetail('${ctx.dungeonId}')">再次挑战</button><button onclick="Act.go('town')">返回主城</button>`;
     else btns=`<button class="primary full" onclick="Act.go('town')">返回主城</button>`;
-    return `<h2 class="title">⚔ 战斗结束</h2>${body}<div class="btns">${btns}</div>`;
+    const autoHint=autoNext?`<p class="dim tiny" style="text-align:center">⏳ 2 秒后自动继续探索…可点「停自动」退出</p>`:'';
+    return `<h2 class="title">⚔ 战斗结束${autoNext?' <small class="q-gold">自动中</small>':''}</h2>${body}${autoHint}<div class="btns">${btns}</div>`;
   }
 
   // ============ 强化 / 镶嵌 ============
