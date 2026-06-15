@@ -31,7 +31,6 @@ body{display:flex;justify-content:center}
 .bar > i{display:block;height:100%;transition:width .3s}
 .bar.hp i{background:linear-gradient(#c43a2f,#7a1d16)}
 .bar.mp i{background:linear-gradient(#4a78c8,#27407a)}
-.bar.xp{height:7px}
 .bar.xp i{background:linear-gradient(#e8c14a,#9a7416)}
 .bar span{position:absolute;inset:0;text-align:center;font-size:9px;line-height:11px;
   color:#fff;text-shadow:0 1px 1px #000;letter-spacing:.3px}
