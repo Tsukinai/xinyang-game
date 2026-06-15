@@ -111,12 +111,27 @@
     const inCombat = window.Combat && Combat.active && Combat.active();
     nav.innerHTML=NAV.map(([s,i,t])=>{
       const on=UI.state.screen===s?'on':'';
-      const q=s==='quests'?questBadge():'';
+      const q=s==='quests'?questBadge():s==='character'?charBadge():s==='bag'?bagBadge():'';
       return `<button class="${on}" ${inCombat?'disabled':''} onclick="Act.go('${s}')"><span class="ni">${i}</span>${t}${q}</button>`;
     }).join('');
   }
   function questBadge(){
     let n=0; for(const id of Object.keys(G.quests||{})) if(Quests.isComplete(id)) n++;
+    return n?`<span class="badge">${n}</span>`:'';
+  }
+  function charBadge(){ return (G.statPoints>0)?`<span class="badge">${G.statPoints}</span>`:''; } // 有可分配属性点
+  function bagBadge(){   // 背包里有比已穿戴更强的可装备物品
+    if(!window.Systems) return '';
+    let n=0;
+    for(const it of (G.bag||[])){ const def=itemDef(it);
+      if(!def||!def.slot) continue;
+      const ce=Systems.canEquip&&Systems.canEquip(it); if(ce&&ce.ok===false) continue;
+      let slot=def.slot; if(slot==='ring1'&&G.equip.ring1&&!G.equip.ring2) slot='ring2';
+      const old=G.equip[slot];
+      const ns=Systems.statScore(Systems.itemStats(it));
+      const os=old?Systems.statScore(Systems.itemStats(old)):0;
+      if(ns>os) n++;
+    }
     return n?`<span class="badge">${n}</span>`:'';
   }
 

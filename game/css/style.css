@@ -14,7 +14,7 @@ html,body{margin:0;padding:0;background:#000;color:var(--ink);
   font-family:"PingFang SC","Microsoft YaHei","Heiti SC",-apple-system,sans-serif;
   font-size:15px;line-height:1.55;-webkit-text-size-adjust:100%}
 body{display:flex;justify-content:center}
-#app{width:100%;max-width:440px;min-height:100vh;background:
+#app{width:100%;max-width:440px;height:100vh;height:100dvh;background:
   radial-gradient(120% 60% at 50% -10%, #241b0e 0%, var(--bg) 55%) ,var(--bg);
   display:flex;flex-direction:column;position:relative;
   box-shadow:0 0 40px #000;overflow:hidden}
@@ -189,6 +189,9 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:12px 0}
 a.link{color:var(--gold);text-decoration:none;border-bottom:1px dotted var(--gold-d);cursor:pointer}
 .badge{display:inline-block;min-width:16px;text-align:center;font-size:10px;background:var(--red);
   color:#fff;border-radius:8px;padding:0 4px;margin-left:3px;vertical-align:top}
+#nav button{position:relative}
+#nav .badge{position:absolute;top:3px;right:8px;margin:0;min-width:14px;box-shadow:0 0 0 1px #000}
+.potslot .pq{margin-left:4px;font-size:11px;color:var(--gold);font-weight:700}
 .empty{color:var(--ink-dim);text-align:center;padding:24px 0;font-size:13px}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-thumb{background:var(--gold-d);border-radius:3px}

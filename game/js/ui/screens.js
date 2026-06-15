@@ -27,20 +27,24 @@
   // ============ 城镇 ============
   function town(){
     const city=DATA.cities[G.cityId]; const sv=city.services||{};
-    const adv=[['📜','任务',`Act.go('quests')`]];
-    if(city.zones&&city.zones.length) adv.push(['🌾','野外练级',`Act.go('zonelist')`]);
-    if(city.dungeons&&city.dungeons.length) adv.push(['🏰','副本',`Act.go('dungeonlist')`]);
-    adv.push(['⚔️','战场国战',`Act.go('battleground')`]);
+    // 入口：[图标, 名称, 动作, 解锁等级]
+    const adv=[['📜','任务',`Act.go('quests')`,1]];
+    if(city.zones&&city.zones.length) adv.push(['🌾','野外练级',`Act.go('zonelist')`,1]);
+    if(city.dungeons&&city.dungeons.length) adv.push(['🏰','副本',`Act.go('dungeonlist')`,5]);
+    adv.push(['⚔️','战场国战',`Act.go('battleground')`,15]);
     const svc=[];
-    if(sv.shop) svc.push(['🛒','商店',`Act.go('shop')`]);
-    if(sv.trainer) svc.push(['🎓','训练师',`Act.trainer()`]);
-    if(sv.forge) svc.push(['⚒️','强化镶嵌',`Act.go('forge')`]);
-    svc.push(['🛏️','休整恢复',`Act.rest()`]);
-    if(sv.auction) svc.push(['💰','拍卖行',`Act.auction()`]);
-    if(sv.library) svc.push(['📚','图书馆',`Act.library()`]);
-    const grow=[['🧵','生活技能',`Act.go('profession')`],['🐎','坐骑宠物',`Act.go('stable')`],
-      ['🐮','公会',`Act.go('guild')`],['🎲','神龛·命骰',`Act.diceScreen()`],['🗺️','传送',`Act.go('map')`]];
-    const gx=arr=>`<div class="grid3">${arr.map(([i,t,fn])=>`<button onclick="${fn}"><div style="font-size:18px">${i}</div><div class="tiny">${t}</div></button>`).join('')}</div>`;
+    if(sv.shop) svc.push(['🛒','商店',`Act.go('shop')`,1]);
+    if(sv.trainer) svc.push(['🎓','训练师',`Act.trainer()`,1]);
+    if(sv.forge) svc.push(['⚒️','强化镶嵌',`Act.go('forge')`,6]);
+    svc.push(['🛏️','休整恢复',`Act.rest()`,1]);
+    if(sv.auction) svc.push(['💰','拍卖行',`Act.auction()`,12]);
+    if(sv.library) svc.push(['📚','图书馆',`Act.library()`,8]);
+    const grow=[['🧵','生活技能',`Act.go('profession')`,5],['🐎','坐骑宠物',`Act.go('stable')`,10],
+      ['🐮','公会',`Act.go('guild')`,10],['🎲','神龛·命骰',`Act.diceScreen()`,3],['🗺️','传送',`Act.go('map')`,1]];
+    const gx=arr=>`<div class="grid3">${arr.map(([i,t,fn,req])=>{ const lock=(req||1)>G.level;
+      return `<button ${lock?'disabled':''} onclick="${lock?'':fn}"><div style="font-size:18px">${lock?'🔒':i}</div>
+        <div class="tiny">${E(t)}</div>${lock?`<div class="tiny" style="color:var(--gold-d)">Lv${req} 解锁</div>`:''}</button>`;
+    }).join('')}</div>`;
     const npcs=(city.npcs||[]).map(n=>`<div class="card btn" onclick="Act.talkNpc('${n.id}')">
       <div class="ct"><span class="ico">${n.icon}</span><span class="nm">${E(n.name)}</span><span class="rt">${E(n.role)}</span></div>
       <div class="ds">${E(n.dialog)}</div></div>`).join('');
@@ -237,8 +241,10 @@
       return `<button ${dis?'disabled':''} onclick="Act.cSkill('${id}')" title="${E(s.desc)}">
         ${s.icon||''}${E(s.name)}${cd>0?`<span class="cd">CD${cd}</span>`:`<span class="cd">${s.mpCost||0}</span>`}</button>`;
     }).join('');
-    const pots=(G.bag||[]).filter(b=>{ const d=DATA.items[b.id]; return d&&d.use; }).slice(0,2).map(b=>{ const d=DATA.items[b.id];
-      return `<button class="ghost" onclick="Act.cItem('${b.id}')">${d.icon||'🧪'}${E(d.name)}×${b.qty}</button>`; }).join('');
+    const usable=(G.bag||[]).filter(b=>{ const d=DATA.items[b.id]; return d&&d.use&&!(d.use.learnSkill||d.use.learnLife); });
+    const potRank=b=>{ const u=DATA.items[b.id].use; return (u.hp||u.hpPct)?0:u.mp?1:2; };  // 血药优先，其次蓝药
+    const pots=usable.slice().sort((a,b)=>potRank(a)-potRank(b)).slice(0,3).map(b=>{ const d=DATA.items[b.id];
+      return `<button class="ghost potslot" onclick="Act.cItem('${b.id}')">${d.icon||'🧪'}${E(d.name)}<span class="pq">${b.qty}</span></button>`; }).join('');
     const auto=UI.state.auto;
     const log=st.log.map(l=>`<div class="l ${l.cls}">${l.text}</div>`).join('');
     const fxE=st.fxEnemy?`<span class="floatdmg${st.fxEnemy.crit?' crit':''}">-${st.fxEnemy.amount}${st.fxEnemy.crit?' 暴击!':''}</span>`:'';
