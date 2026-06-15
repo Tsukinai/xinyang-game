@@ -15,8 +15,11 @@
       level: def.level, type: def.type || 'normal',
       hp: def.hp, maxHp: def.hp, atk: def.atk, armor: def.def || def.armor || 0,
       dots: [], debuffs: [], stun: 0, skills: def.skills || [],
+      casting: null, castCd: 2, enraged: false,   // boss 机制：读条大招 / 狂暴阶段
     };
   }
+  const ULT_NAMES = ['灭世一击','毁天怒涛','黑暗爆发','终焉风暴','血色月华','深渊咆哮','裁决之锤'];
+  function pickUltName(){ return ULT_NAMES[Systems.rand(0, ULT_NAMES.length-1)]; }
 
   function start(spec) {
     const queue = (spec.enemies || []).map(mkEnemy).filter(Boolean);
@@ -150,7 +153,29 @@
     // DOT 结算
     runEnemyDots();
     if (e.hp<=0) { advance(); return; }
+    // 多阶段：BOSS 血量低于35% 触发狂暴（一次性）
+    if (e.type==='boss' && !e.enraged && e.hp <= e.maxHp*0.35) {
+      e.enraged = true; e.atk = Math.round(e.atk*1.3);
+      pushLog('sys', `💢 【${e.name}】陷入狂暴！攻击大幅提升，蓄力更频繁！`);
+    }
+    // 读条大招结算
+    if (e.casting) {
+      if (e.stun > 0) { pushLog('heal', `⚡ 你打断了 ${e.name} 的蓄力【${e.casting.name}】！`); e.casting = null; e.stun--; return; }
+      const cast = e.casting; e.casting = null;
+      hitPlayer(e, cast.mult, `${e.name} 释放蓄力大招【${cast.name}】`, true);
+      return;
+    }
     if (e.stun > 0) { pushLog('miss', `${e.name} 被控制，无法行动。`); e.stun--; return; }
+    // BOSS 蓄力读条大招（蓄力回合不普攻，给玩家用控制打断/拉开的窗口）
+    if (e.type==='boss') {
+      if (e.castCd > 0) e.castCd--;
+      else if (Math.random() < (e.enraged?0.55:0.4)) {
+        e.casting = { name: pickUltName(), mult: e.enraged?3.2:2.5 };
+        e.castCd = e.enraged?2:3;
+        pushLog('sys', `⏳ ${e.name} 开始蓄力【${e.casting.name}】，下回合释放毁灭一击！（眩晕可打断）`);
+        return;
+      }
+    }
     // 闪避
     if (Math.random()*100 < G.dodge) { pushLog('miss', `你闪避了 ${e.name} 的攻击！`); return; }
     // 敌人技能/普攻
@@ -161,21 +186,22 @@
       if (esk) { mult = (esk.effect&&esk.effect.mult)||1.3; label = `${e.name} 使用【${esk.name}】`;
         if (esk.effect && esk.effect.stunTurns && Math.random()<0.5) { C.pStun += esk.effect.stunTurns; } }
     }
+    hitPlayer(e, mult, label, false);
+  }
+  // 敌方对玩家造成伤害（普攻/技能/大招共用）
+  function hitPlayer(e, mult, label, forceCrit) {
     let raw = Math.round(effAtk(e) * mult * (0.9 + Math.random()*0.2));
-    // 百分比减伤（上限75%）——避免高护甲后期被怪只打1点而无脑平推
-    const red = Math.min(0.75, G.armor / (G.armor + 220 + e.level*16));
+    const red = Math.min(0.75, G.armor / (G.armor + 220 + e.level*16));   // 百分比减伤上限75%
     raw = Math.max(1, Math.round(raw * (1 - red)));
-    // 暴击
-    let crit = Math.random() < 0.08;
+    let crit = forceCrit || Math.random() < 0.08;
     if (crit) raw = Math.round(raw*1.5);
-    // 护盾吸收
     if (C.pShield > 0) { const ab = Math.min(C.pShield, raw); C.pShield -= ab; raw -= ab;
       if (ab>0) pushLog('sys', `护盾吸收 ${ab} 伤害。`); }
     G.hpCur = Math.max(0, G.hpCur - raw);
     C.fxPlayer = { amount: raw, crit };
     pushLog(crit?'crit':'dmg', `${label}，对你造成 ${raw} 伤害${crit?'（暴击）':''}。`);
     if (G.hpCur <= 0) { death(); return; }
-    // 荆棘反伤（词缀/套装）
+    // 荆棘反伤
     if (G.thorns>0 && raw>0 && e.hp>0) {
       const ref = Math.max(1, Math.round(raw * G.thorns/100));
       e.hp = Math.max(0, e.hp - ref); C.fxEnemy = { amount: ref, crit:false };
@@ -409,7 +435,8 @@
     return {
       over: C.over, result: C.result,
       enemy: C.cur ? { name:C.cur.name, icon:C.cur.icon, level:C.cur.level, type:C.cur.type,
-        hp:C.cur.hp, maxHp:C.cur.maxHp, dots:C.cur.dots, debuffs:C.cur.debuffs, stun:C.cur.stun } : null,
+        hp:C.cur.hp, maxHp:C.cur.maxHp, dots:C.cur.dots, debuffs:C.cur.debuffs, stun:C.cur.stun,
+        casting:C.cur.casting?C.cur.casting.name:null, enraged:!!C.cur.enraged } : null,
       remaining: C.queue.length - C.idx - 1,
       total: C.queue.length,
       cooldowns: C.cooldowns, pBuffs: C.pBuffs, pShield: C.pShield, pStun: C.pStun,

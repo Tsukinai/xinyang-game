@@ -237,8 +237,9 @@
     const e=st.enemy;
     const ehpPct=e?Math.round(e.hp/e.maxHp*100):0;
     const cls=DATA.classes[G.classId];
-    const enemyTag=e?(e.type==='boss'?'<span class="tag q-dark">BOSS</span>':e.type==='elite'?'<span class="tag q-purple">精英</span>':''):'';
+    const enemyTag=e?(e.type==='boss'?'<span class="tag q-dark">BOSS</span>':e.type==='elite'?'<span class="tag q-purple">精英</span>':'')+(e.enraged?'<span class="tag" style="color:#ff4d4d;border-color:#ff4d4d">狂暴</span>':''):'';
     const statusE=e?[(e.stun>0?'😵眩晕':''),...(e.dots||[]).map(d=>'🩸'+d.name),...(e.debuffs||[]).map(d=>'⬇'+d.name)].filter(Boolean).join(' '):'';
+    const castWarn=e&&e.casting?`<div class="castbar">⏳ ${E(e.name)} 蓄力中【${E(e.casting)}】——下回合毁灭一击！用眩晕打断！</div>`:'';
     const statusP=[...(st.pBuffs||[]).map(b=>'⬆'+b.name),(st.pShield>0?'🛡️护盾'+st.pShield:''),(st.pStun>0?'😵被控':'')].filter(Boolean).join(' ');
     // 技能按钮
     const skBtns=(G.skills||[]).concat(G.setSkills||[]).map(id=>{ const s=DATA.skills[id]; if(!s||s.type!=='active') return '';
@@ -265,6 +266,7 @@
             <div class="cbar"><i style="width:${ehpPct}%"></i></div><div class="tiny dim">${e.hp}/${e.maxHp}</div>
             <div class="tiny" style="color:#ff9">${statusE||'&nbsp;'}</div>`:'虚空'}</div>
         </div>
+        ${castWarn}
         <div id="log">${log}</div>
       </div>`;
     const footer=`<div class="btns combat-skills"><button class="primary" onclick="Act.cAttack()">⚔ 普攻</button>${skBtns}</div>

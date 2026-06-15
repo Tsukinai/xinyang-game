@@ -136,6 +136,10 @@ button.full,.b.full{width:100%;text-align:center}
   25%{opacity:1;transform:translate(-50%,-2px) scale(1.1)}
   100%{opacity:0;transform:translate(-50%,-26px) scale(1)}}
 .combat-skills button{font-size:13px;padding:7px 11px}
+.castbar{margin-top:8px;padding:6px 9px;border-radius:5px;font-size:12px;font-weight:600;color:#ffd23f;
+  background:linear-gradient(90deg,#3a1414,#241308);border:1px solid #ff7a1a;
+  animation:castpulse .8s ease-in-out infinite alternate}
+@keyframes castpulse{from{box-shadow:0 0 0 0 rgba(255,122,26,.4)}to{box-shadow:0 0 8px 2px rgba(255,122,26,.7)}}
 #log{margin-top:10px;background:#0a0805;border:1px solid var(--line);border-radius:5px;
   padding:8px 9px;height:clamp(120px,32vh,220px);overflow-y:auto;font-size:12.5px;line-height:1.5}
 #log .l{margin:2px 0;border-bottom:1px solid #1a150d;padding-bottom:2px}
