@@ -116,7 +116,7 @@
     return {ok:true};
   }
 
-  window.World = { pickProfession, profRankName, gather, craft, ownMount, buyMount, grantMount, setMount, mountDiscount,
+  window.World = { pickProfession, profRankName, addProfExp, gather, craft, ownMount, buyMount, grantMount, setMount, mountDiscount,
     ownAlly, buyAlly, grantAlly, setAlly, joinGuild, addContribution, guildBuy, RANK_EXP,
     fuseQualityCount, pandoraFuse, studyAttr, learnLang };
 })();

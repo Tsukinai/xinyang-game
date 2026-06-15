@@ -98,8 +98,11 @@
   // ============ 角色面板 ============
   function character(){
     const cls=DATA.classes[G.classId]; const a=G.attr;
-    const allocRows=ATTRS.map(([k,n])=>`<div class="kv"><span>${n} <b>${a[k]}</b></span>
-      ${G.statPoints>0?`<button class="b" style="padding:2px 9px" onclick="Act.allocate('${k}')">+</button>`:''}</div>`).join('');
+    const guide=Systems.attrGuide(G.classId);
+    const allocRows=guide.map(r=>`<div class="kv" style="align-items:flex-start;padding:5px 0">
+      <span>${r.n}${r.primary?' <span class="tag q-gold" style="font-size:10px">主属性</span>':''} <b>${a[r.k]}</b>
+        <div class="tiny dim" style="margin-top:1px">每点：${r.eff.join(' · ')}</div></span>
+      ${G.statPoints>0?`<button class="b" style="padding:2px 9px" onclick="Act.allocate('${r.k}')">+</button>`:''}</div>`).join('');
     const combat=[['攻击',G.atk],['法术强度',G.sp],['护甲',G.armor],['暴击',G.crit.toFixed(1)+'%'],['闪避',G.dodge.toFixed(1)+'%'],
       ['生命',G.maxHp],[cls.resource,G.maxMp],['生命回复',G.regenHp]];
     const titles=(G.titles||[]).map(t=>`<span class="tag q-gold" onclick="Act.setTitle('${E(t)}')" style="cursor:pointer">${E(t)}</span>`).join(' ')||'<span class="dim tiny">暂无</span>';
@@ -113,8 +116,7 @@
       ${G.level>=cls.specLevel&&!G.spec?`<div class="card btn" style="border-color:var(--gold)" onclick="Act.chooseSpec()">⚡ 可选择流派（专长）！点此选择</div>`:''}
       ${G.spec&&(DATA.specBonus||{})[G.spec]?`<div class="card"><b>流派加成</b> <span class="tiny q-gold">${E((DATA.specBonus[G.spec]||{}).note||'')}</span></div>`:''}
       <h3 class="sub">基础属性 ${G.statPoints>0?'<span class="tiny q-gold">（有 '+G.statPoints+' 点可加）</span>':''}</h3>
-      <p class="dim tiny">力量→攻击 · 敏捷→攻击/护甲/暴击/闪避 · 智力→法强/法力 · 体质→生命 · 精神→法强(治疗)/法力/回复。
-        你的主属性是 <b class="q-gold">${({str:'力量',agi:'敏捷',int:'智力',spi:'精神'})[cls.power]||cls.power}</b>（收益翻倍，优先堆它）。</p>
+      <p class="dim tiny">加点实时影响下方战斗属性。<b class="q-gold">主属性</b>收益最高，优先堆它；<b>精神</b>提供「通用技能威力」，所有职业都受益，并提升法力与回复。</p>
       <div class="card">${allocRows}${G.statPoints>0?`<div class="btns"><button class="ghost" onclick="Act.resetAlloc()">洗点</button></div>`:''}</div>
       <h3 class="sub">战斗属性</h3>
       <div class="card"><div class="stats">${combat.map(([n,v])=>`<div class="s"><span>${n}</span><b>${v}</b></div>`).join('')}</div></div>
@@ -175,9 +177,11 @@
     const cls=DATA.classes[G.classId];
     const learned=(G.skills||[]).concat(G.setSkills||[]).map(id=>{ const s=DATA.skills[id]; if(!s) return '';
       const isSet=(G.setSkills||[]).indexOf(id)>=0; const isBook=(G.bookSkills||[]).indexOf(id)>=0;
-      const prof=s.type==='active'?Skills.profLv(id):0; const tag=isSet?' <span class="tag q-gold">套装</span>':isBook?' <span class="tag q-blue">技能书</span>':'';
+      const pf=s.type==='active'?Skills.profInfo(id):null;
+      const profTag=pf?` <span class="q-gold tiny">熟练Lv${pf.lv}${pf.max?'·满':' ('+pf.exp+'/'+pf.need+')'} · +${Math.round((Skills.profMul(id)-1)*100)}%威力</span>`:'';
+      const tag=isSet?' <span class="tag q-gold">套装</span>':isBook?' <span class="tag q-blue">技能书</span>':'';
       return `<div class="skill-row"><span class="si">${s.icon||'✨'}</span><div class="sd">
-        <div class="snm">${E(s.name)}${prof>1?` <span class="q-gold tiny">熟练Lv${prof}</span>`:''}${tag} <span class="tiny dim">${s.type==='passive'?'被动':cls.resource+(s.mpCost||0)+(s.cooldown?' · CD'+s.cooldown:'')}</span></div>
+        <div class="snm">${E(s.name)}${profTag}${tag} <span class="tiny dim">${s.type==='passive'?'被动':cls.resource+(s.mpCost||0)+(s.cooldown?' · CD'+s.cooldown:'')}</span></div>
         <div class="sde">${E(s.desc)}</div></div></div>`; }).join('');
     const next=Skills.nextUnlock();
     const lp=G.lockpick||{learned:false,lv:1};
@@ -255,9 +259,9 @@
     // 技能按钮
     const skBtns=(G.skills||[]).concat(G.setSkills||[]).map(id=>{ const s=DATA.skills[id]; if(!s||s.type!=='active') return '';
       const cd=Combat.cooldown(id); const noMp=G.mpCur<(s.mpCost||0);
-      const dis=cd>0||noMp;
-      return `<button ${dis?'disabled':''} onclick="Act.cSkill('${id}')" title="${E(s.desc)}">
-        ${s.icon||''}${E(s.name)}${cd>0?`<span class="cd">CD${cd}</span>`:`<span class="cd">${s.mpCost||0}</span>`}</button>`;
+      const dis=cd>0||noMp; const lv=Skills.profInfo(id).lv;
+      return `<button ${dis?'disabled':''} onclick="Act.cSkill('${id}')" title="${E(s.desc)} ｜ 熟练Lv${lv}（+${Math.round((Skills.profMul(id)-1)*100)}%威力）">
+        ${s.icon||''}${E(s.name)}<span class="cd">Lv${lv}</span>${cd>0?`<span class="cd">CD${cd}</span>`:`<span class="cd">${s.mpCost||0}</span>`}</button>`;
     }).join('');
     const usable=(G.bag||[]).filter(b=>{ const d=DATA.items[b.id]; return d&&d.use&&!(d.use.learnSkill||d.use.learnLife); });
     const potRank=b=>{ const u=DATA.items[b.id].use; return (u.hp||u.hpPct)?0:u.mp?1:2; };  // 血药优先，其次蓝药
@@ -379,18 +383,35 @@
       }).join('');
       body=`<div class="dim tiny" style="margin:4px 0">已收集 <b class="q-gold">${owned}</b> / ${ids.length} 件传说神器</div>${cards}`;
     } else {
-      // 怪物图鉴：掉落表 + 概率（排除彩蛋掉落）
+      // 怪物图鉴：按出没地点分类，组内按等级从低到高；附掉落表+概率（排除彩蛋掉落）
       const eggSet={}; (DATA.eggItems||[]).forEach(id=>eggSet[id]=1);
-      const mons=Object.values(DATA.monsters).filter(m=>m&&m.name).sort((a,b)=>(a.level||0)-(b.level||0));
-      let killedKinds=0;
-      const cards=mons.map(m=>{ const k=(G.kills&&G.kills[m.id])||0; if(k)killedKinds++;
+      // 由区域/副本反推每只怪的出没地点与归属城市
+      const monLoc={}, monCity={};
+      const addLoc=(mid,loc,cityId)=>{ if(!DATA.monsters[mid]) return; (monLoc[mid]=monLoc[mid]||[]).push(loc); if(!monCity[mid]) monCity[mid]=cityId; };
+      for(const zid in DATA.zones){ const z=DATA.zones[zid];
+        [...(z.encounters||[]).map(e=>e.m),...(z.rare||[]).map(r=>r.m)].forEach(m=>addLoc(m,z.name,z.cityId)); }
+      for(const did in DATA.dungeons){ const d=DATA.dungeons[did];
+        [...(d.waves||[]),d.boss].filter(Boolean).forEach(m=>addLoc(m,d.name,d.cityId)); }
+      // 分组到城市；无出没地点的（剧情/特殊遭遇）归入「特殊遭遇」
+      const groups={}; const SPECIAL='__special';
+      Object.values(DATA.monsters).filter(m=>m&&m.name).forEach(m=>{ const c=monCity[m.id]||SPECIAL; (groups[c]=groups[c]||[]).push(m); });
+      const minLv=arr=>Math.min(...arr.map(m=>m.level||0));
+      const cityIds=Object.keys(groups).sort((a,b)=>{ if(a===SPECIAL) return 1; if(b===SPECIAL) return -1; return minLv(groups[a])-minLv(groups[b]); });
+      let killedKinds=0, total=0;
+      const monCard=m=>{ const k=(G.kills&&G.kills[m.id])||0; if(k)killedKinds++; total++;
         const tag=m.type==='boss'?'<span class="tag q-dark">BOSS</span>':m.type==='elite'?'<span class="tag q-purple">精英</span>':'';
         const drops=(m.drops||[]).filter(d=>d&&d.item&&DATA.items[d.item]&&!eggSet[d.item])
           .map(d=>{ const it=DATA.items[d.item]; return `<span class="${UI.qcls(it.quality)}">${E(it.name)}</span> <span class="dim">${Math.round((d.chance||0)*100)}%</span>`; }).join('　');
+        const locs=[...new Set(monLoc[m.id]||[])].join('、');
         return `<div class="card"><div class="ct"><span class="ico">${m.icon||'👹'}</span><span class="nm">${E(m.name)} ${tag}</span><span class="rt tiny">Lv${m.level||1}${k?` · 击杀${k}`:''}</span></div>
+          ${locs?`<div class="tiny q-gold" style="line-height:1.7">出没：${E(locs)}</div>`:''}
           <div class="tiny dim" style="line-height:1.7">掉落：${drops||'<span>仅随机词缀装备 / 金币</span>'}</div></div>`;
+      };
+      const sections=cityIds.map(c=>{ const arr=groups[c].slice().sort((a,b)=>(a.level||0)-(b.level||0));
+        const title=c===SPECIAL?'✨ 特殊遭遇 / 剧情':`${(DATA.cities[c]||{}).icon||'🏙️'} ${(DATA.cities[c]||{}).name||c}周边`;
+        return `<h3 class="sub">${E(title)} <span class="tiny dim">Lv${minLv(arr)}+</span></h3>${arr.map(monCard).join('')}`;
       }).join('');
-      body=`<div class="dim tiny" style="margin:4px 0">共 ${mons.length} 种怪物 · 已击杀过 <b class="q-gold">${killedKinds}</b> 种（掉落概率不含彩蛋神器）</div>${cards}`;
+      body=`<div class="dim tiny" style="margin:4px 0">共 ${total} 种怪物 · 已击杀过 <b class="q-gold">${killedKinds}</b> 种 · 按出没地点分类、等级从低到高（掉落概率不含彩蛋神器）</div>${sections}`;
     }
     return `<h2 class="title">📖 图鉴</h2>${seg}<div class="list">${body}</div>`;
   }

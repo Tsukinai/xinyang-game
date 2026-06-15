@@ -361,6 +361,14 @@
           pushLog('loot', `掉落：<span class="${DATA.qualities[inst.quality].cls}">${inst.name}</span>`);
         }
       }
+      // 练级/副本中随机采集到矿石或草药（顺手采集，偏向草药/矿石）
+      if (Math.random() < 0.18) {
+        const pool = ['herb','herb','herb','iron_ore','iron_ore','iron_ore','fine_silk','bat_tooth','treant_bark'];
+        const gid = pool[Systems.rand(0, pool.length-1)];
+        C.acc.loot[gid] = (C.acc.loot[gid]||0)+1;
+        C.acc.gathered = (C.acc.gathered||0)+1;
+        pushLog('loot', `🌿 顺手采集到 ${itemName(gid)}。`);
+      }
       // 彩蛋：超低爆率传说神器（高难副本显著提升彩蛋率）
       if (DATA.eggItems && DATA.eggItems.length) {
         const eggBase = dead.type==='boss'?0.004 : dead.type==='elite'?0.001 : 0.0002;
@@ -392,6 +400,10 @@
     const lootArr = Object.keys(C.acc.loot).map(id=>({id,qty:C.acc.loot[id]}));
     for (const l of lootArr) Systems.addItem(l.id, l.qty);
     for (const inst of C.acc.genLoot) Systems.addInstance(inst);
+    // 采集到的材料给生活职业积累熟练度
+    if (C.acc.gathered && G.profession && window.World) {
+      if (World.addProfExp(C.acc.gathered * 6)) pushLog('sys', `生活技能熟练度晋阶【${World.profRankName()}】！`);
+    }
     const genArr = C.acc.genLoot.slice();
     let dgReward = null;
     if (C.spec.dungeonId) {

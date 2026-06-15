@@ -107,7 +107,8 @@ DATA._pack2 = {"regions":[{"monsters":[{"id":"rgv_ember_imp","name":"炽炎小�
         it.stats[a.stat]=(it.stats[a.stat]||0)+val;
         if(usePre&&!preName)preName=a.name; else if(!usePre&&!sufName)sufName=a.name; }
       if(preName) it.name=preName+it.name;
-      if(sufName) it.name=it.name+'·'+sufName;
+      // 后缀以「之」开头时直接相连（如 巨剑之利刃），否则用「·」分隔（如 巨剑·星辰之智 / 巨剑·吸血）
+      if(sufName) it.name=it.name+(sufName.charAt(0)==='之'?sufName:'·'+sufName);
       return it;
     };
     Items.__affixed=true;

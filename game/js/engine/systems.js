@@ -6,8 +6,19 @@
   const STAT_PER_LEVEL = 3;          // 每级可手动分配点数
   const QUALITY_ORDER = ['white','green','blue','purple','silver','gold','dark'];
 
-  // ===== 等级与经验 =====
-  function xpToNext(level) { return Math.floor(60 + 70 * level + 14 * level * level); }
+  // ===== 属性派生系数（单一来源：recompute 与 attrGuide 共用，保证面板说明=实际效果）=====
+  const ATTR = {
+    PRIMARY_POWER: 2.2,   // 主属性每点 → 攻击 / 法术强度
+    SPI_POWER: 1.0,       // 精神每点 → 技能威力（所有职业通用）
+    HP_PER_STA: 10,       // 体质 → 生命
+    ARMOR_PER_STA: 0.5, ARMOR_PER_AGI: 0.4, ARMOR_PER_STR: 0.3,
+    MP_PER_INT: 5, MP_PER_SPI: 4,
+    CRIT_PER_AGI: 0.1, DODGE_PER_AGI: 0.08,
+    REGENHP_PER_SPI: 0.5, REGENMP_PER_SPI: 0.6, REGENMP_PER_INT: 0.2,
+  };
+
+  // ===== 等级与经验（×2.5：减缓挂机刷级速度）=====
+  function xpToNext(level) { return Math.floor((60 + 70 * level + 14 * level * level) * 2.5); }
 
   // ===== 最终属性（基础+成长+加点+装备） =====
   function finalAttr() {
@@ -92,21 +103,26 @@
       atk+=st.atk||0; sp+=st.sp||0; armor+=st.armor||0; hp+=st.hp||0; mp+=st.mp||0;
       crit+=st.crit||0; dodge+=st.dodge||0; haste+=st.haste||0;
     }
-    // 主属性驱动攻击力
-    const primary = a[cls.power] || 0;
-    const physBase = primary * 2 + a.str * 0.5;
-    const spellBase = a.int * 2 + a.spi * (cls.role==='healer'?1.2:0.5);
-    G.atk = Math.round(cls.magic ? 0 : physBase) + atk + G.level*2;
-    G.sp  = Math.round(cls.magic ? spellBase : 0) + sp;
-    G.power = cls.magic ? G.sp + atk : G.atk;       // 技能伤害基准
-    G.maxHp = Math.round(40 + a.sta * 9 + G.level * 8 + hp);
-    G.maxMp = Math.round(30 + a.int * 6 + a.spi * 4 + G.level * 5 + mp);
-    G.armor = Math.round(armor + a.agi * 0.4);
-    G.crit  = Math.min(60, 3 + a.agi * 0.05 + crit);       // %
-    G.dodge = Math.min(40, 2 + a.agi * 0.06 + dodge);      // %
+    // 主属性 + 精神 驱动威力（攻击或法术强度）；精神是所有职业通用的「技能威力」
+    const P = cls.power;
+    const powerBase = Math.round(G.level*2 + (a[P]||0)*ATTR.PRIMARY_POWER + (a.spi||0)*ATTR.SPI_POWER);
+    if (cls.magic) {
+      G.sp  = powerBase + sp;
+      G.atk = atk;                 // 装备物攻（混合职业）
+      G.power = G.sp + atk;        // 法系技能基准（含装备物攻）
+    } else {
+      G.atk = powerBase + atk;
+      G.sp  = sp;                  // 装备法强（混合，如圣骑治疗）
+      G.power = G.atk;
+    }
+    G.maxHp = Math.round(50 + a.sta * ATTR.HP_PER_STA + G.level * 8 + hp);
+    G.maxMp = Math.round(30 + a.int * ATTR.MP_PER_INT + a.spi * ATTR.MP_PER_SPI + G.level * 4 + mp);
+    G.armor = Math.round(armor + a.agi * ATTR.ARMOR_PER_AGI + a.sta * ATTR.ARMOR_PER_STA + a.str * ATTR.ARMOR_PER_STR);
+    G.crit  = Math.min(60, 4 + a.agi * ATTR.CRIT_PER_AGI + crit);       // %
+    G.dodge = Math.min(40, 3 + a.agi * ATTR.DODGE_PER_AGI + dodge);     // %
     G.haste = haste;                                       // 影响出手/冷却（简化）
-    G.regenHp = Math.round(2 + a.spi * 0.4 + G.level * 0.3);
-    G.regenMp = Math.round(2 + a.spi * 0.5 + a.int * 0.2);
+    G.regenHp = Math.round(2 + a.spi * ATTR.REGENHP_PER_SPI + G.level * 0.3);
+    G.regenMp = Math.round(2 + a.spi * ATTR.REGENMP_PER_SPI + a.int * ATTR.REGENMP_PER_INT);
     // 被动技能加成
     for (const sid of (G.skills||[])) {
       const sk = DATA.skills[sid];
@@ -379,12 +395,31 @@
   function statScore(s){ let v=0; for(const k in SCORE_W) v+=(s[k]||0)*SCORE_W[k]; return Math.round(v); }
   function powerScore(){ return statScore({atk:G.atk,sp:G.sp,hp:G.maxHp,mp:G.maxMp,armor:G.armor,crit:G.crit,dodge:G.dodge,haste:G.haste}); }
 
+  // ===== 属性说明（每点的实际效果，按职业生成；与 recompute 共用 ATTR 系数）=====
+  function attrGuide(classId){
+    const cls = DATA.classes[classId||G.classId]; const P = cls.power; const magic = cls.magic;
+    const powName = magic ? '法术强度' : '攻击';
+    const spiTotal = (P==='spi'?ATTR.PRIMARY_POWER:0) + ATTR.SPI_POWER;
+    return [
+      { k:'str', n:'力量', primary:P==='str',
+        eff:[P==='str'?`${powName} +${ATTR.PRIMARY_POWER}`:null, `护甲 +${ATTR.ARMOR_PER_STR}`].filter(Boolean) },
+      { k:'agi', n:'敏捷', primary:P==='agi',
+        eff:[P==='agi'?`${powName} +${ATTR.PRIMARY_POWER}`:null, `暴击 +${ATTR.CRIT_PER_AGI}%`, `闪避 +${ATTR.DODGE_PER_AGI}%`, `护甲 +${ATTR.ARMOR_PER_AGI}`].filter(Boolean) },
+      { k:'int', n:'智力', primary:magic&&P==='int',
+        eff:[(magic&&P==='int')?`${powName} +${ATTR.PRIMARY_POWER}`:null, `法力 +${ATTR.MP_PER_INT}`].filter(Boolean) },
+      { k:'sta', n:'体质', primary:false,
+        eff:[`生命 +${ATTR.HP_PER_STA}`, `护甲 +${ATTR.ARMOR_PER_STA}`] },
+      { k:'spi', n:'精神', primary:P==='spi',
+        eff:[`${powName} +${spiTotal}${P==='spi'?'(主属性)':'(通用技能威力)'}`, `法力 +${ATTR.MP_PER_SPI}`, `回血+${ATTR.REGENHP_PER_SPI}·回蓝+${ATTR.REGENMP_PER_SPI}`] },
+    ];
+  }
+
   window.Systems = {
     LEVEL_CAP, xpToNext, recompute, fullHeal, restTick, gainXp, levelUp,
     allocate, resetAlloc, addItem, addInstance, removeItem, countItem, equip, unequip, equipToSlot, autoEquipBest, canEquip,
     addGold, buy, sell, rollLoot, itemStats, finalAttr, rand, qualityRank, QUALITY_ORDER,
     enhance, enhanceCost, isBound, gearUpCost, upgradeGear, socketGem, socketCount, setBonuses, equippedSetCounts,
-    bulkSell, bulkSellPreview, statScore, powerScore,
+    bulkSell, bulkSellPreview, statScore, powerScore, attrGuide,
   };
 
   // ===================== 技能 =====================
@@ -406,6 +441,7 @@
     // 技能熟练度/练级：用技能积累熟练度，升级增强威力（上限10级）
     profLv(id){ const p=(G.skillProf||{})[id]; return (p&&p.lv)||1; },
     profMul(id){ return 1 + (this.profLv(id)-1)*0.03; },   // 每级 +3% 威力，10级 +27%
+    profInfo(id){ const p=(G.skillProf||{})[id]||{}; const lv=p.lv||1; return {lv, exp:p.exp||0, need:lv*8, max:lv>=10}; },
     gainProf(id, amt){
       G.skillProf = G.skillProf||{};
       const p = G.skillProf[id] = G.skillProf[id]||{lv:1,exp:0};
@@ -421,7 +457,10 @@
       G.learned[skillId]=true; G.skills.push(skillId); G.bookSkills=G.bookSkills||[]; G.bookSkills.push(skillId);
       recompute(); return true;
     },
-    learnLife(name){ if(name==='lockpick'){ G.lockpick=G.lockpick||{learned:false,lv:1,exp:0}; if(G.lockpick.learned) return 'have'; G.lockpick.learned=true; return true; } return false; },
+    learnLife(name){ if(name==='lockpick'){ G.lockpick=G.lockpick||{learned:false,lv:1,exp:0};
+        if(G.lockpick.learned){ if((G.lockpick.lv||1)>=10) return 'max';   // 已会开锁（如盗贼）：技能书改为直接提升开锁等级
+          G.lockpick.lv=(G.lockpick.lv||1)+1; return 'levelup'; }
+        G.lockpick.learned=true; return true; } return false; },
     passives() { return this.list().filter(s => s.type === 'passive'); },
     nextUnlock() {
       const cls = DATA.classes[G.classId];

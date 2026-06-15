@@ -13,7 +13,7 @@ Object.assign(DATA.skills, {
 });
 
 // ---------- 技能书 / 开锁书（物品，使用即学）----------
-DATA.items.book_lockpick = {name:'开锁专家·技能书',type:'技能书',quality:'gold',value:200,stackable:false,icon:'📘',use:{learnLife:'lockpick'},desc:'习得「开锁」生活技能（盗贼天生掌握）。开宝箱积累熟练度，越练成功率与开出品质越高。'};
+DATA.items.book_lockpick = {name:'开锁专家·技能书',type:'技能书',quality:'gold',value:200,stackable:false,icon:'📘',use:{learnLife:'lockpick'},desc:'习得「开锁」生活技能；已会开锁者（如盗贼）使用则直接 +1 开锁熟练度等级（上限Lv10）。熟练度越高，开锁成功率与开出品质越高。'};
 DATA.items.book_steal = {name:'偷窃术·技能书',type:'技能书',quality:'gold',value:300,stackable:false,icon:'📕',use:{learnSkill:'s_steal'},classReq:'rogue',icon:'📕',desc:'盗贼专属。习得「偷窃术」：伤害并偷取目标钱财。'};
 DATA.items.book_assassinate = {name:'刺杀·技能书',type:'技能书',quality:'dark',value:600,stackable:false,icon:'📕',use:{learnSkill:'s_assassinate'},classReq:'rogue',desc:'盗贼专属·稀有。习得「暗杀」：必定暴击、无视护甲的致命一击。'};
 DATA.items.book_warcry = {name:'战吼·技能书',type:'技能书',quality:'silver',value:150,stackable:false,icon:'📗',use:{learnSkill:'s_warcry'},desc:'通用。习得「战吼」增益技能。'};

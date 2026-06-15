@@ -150,8 +150,10 @@
         if(d.classReq && d.classReq!==G.classId){ T('职业不符，无法学习此技能书'); return; }
         const res = u.learnSkill ? Skills.learnBook(u.learnSkill) : Skills.learnLife(u.learnLife);
         if(res==='have'){ T('你已掌握该技能'); return; }
+        if(res==='max'){ T('开锁已达熟练上限 Lv10'); return; }
         if(!res){ T('无法学习'); return; }
         Systems.removeItem(it.id,1); Save.save(); CM(); render();
+        if(res==='levelup'){ T('🗝️ 开锁熟练度提升至 Lv'+G.lockpick.lv+'！'); return; }
         T('习得：'+(u.learnSkill?DATA.skills[u.learnSkill].name:'开锁'));
         return;
       }
