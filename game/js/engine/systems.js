@@ -419,14 +419,15 @@
     progressText(id) {
       const q = DATA.quests[id], st = G.quests[id]; if (!q||!st) return '';
       const o = q.objective || {};
-      if (o.count) return `${Math.min(st.prog,o.count)}/${o.count}`;
+      if (o.count) { const cur = o.kind==='collect' ? Systems.countItem(o.target) : st.prog; return `${Math.min(cur,o.count)}/${o.count}`; }
       return st.status==='done'?'可交付':'进行中';
     },
     isComplete(id) {
       const q = DATA.quests[id], st = G.quests[id]; if (!q||!st) return false;
       if (q.requireAllOrder) return ['正义','善良','勇气','智慧','公正','自由'].every(c=>G.orderChapters[c]);
-      if (st.status==='done') return true;
       const o = q.objective||{};
+      if (o.kind==='collect' && o.count) return Systems.countItem(o.target) >= o.count;  // 收集类按背包实时持有数判定
+      if (st.status==='done') return true;
       if (!o.count) return false;
       return st.prog >= o.count;
     },
