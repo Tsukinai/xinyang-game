@@ -64,8 +64,7 @@
         <span class="sb-meta">Lv${G.level} ${G.advClass?'<span class="q-gold">'+esc(G.advClass)+'</span>':cls.name}${G.spec?'·'+(cls.specs.find(s=>s.id===G.spec)||{}).name:''}</span>
         <span class="sb-gold">${money(G.gold)}</span>
       </div>
-      <div class="sb-row" style="margin-top:2px">${title}<span class="sb-meta">${DATA.empires[G.empire].name}</span>
-        <span class="sb-meta" style="margin-left:auto">${cls.resource} ${G.mpCur}/${G.maxMp}</span></div>
+      <div class="sb-row" style="margin-top:2px">${title}<span class="sb-meta">${DATA.empires[G.empire].name}</span></div>
       <div class="bars">
         <div class="bar hp"><i style="width:${hpPct}%"></i><span>生命 ${G.hpCur}/${G.maxHp}</span></div>
         <div class="bar mp"><i style="width:${mpPct}%"></i><span>${cls.resource} ${G.mpCur}/${G.maxMp}</span></div>

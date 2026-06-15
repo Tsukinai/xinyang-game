@@ -218,9 +218,9 @@
     return { amount, crit: isCrit };
   }
   function critChance() {
-    let c = G.crit;
-    for (const b of C.pBuffs) if (b.stat==='crit') c += b.amt;
-    return Math.min(75, c);
+    let c = Math.min(75, G.crit);                                // 基础暴击上限 75%
+    for (const b of C.pBuffs) if (b.stat==='crit') c += b.amt;   // 增益（如潜行）叠加在上限之外
+    return c;
   }
   function enemyArmor(e){ let a=e.armor; for(const d of e.debuffs) if(d.stat==='armor') a-=d.amt; return Math.max(0,a); }
 

@@ -211,7 +211,6 @@
     const e=st.enemy;
     const ehpPct=e?Math.round(e.hp/e.maxHp*100):0;
     const cls=DATA.classes[G.classId];
-    const phpPct=Math.round(G.hpCur/G.maxHp*100), pmpPct=Math.round(G.mpCur/G.maxMp*100);
     const enemyTag=e?(e.type==='boss'?'<span class="tag q-dark">BOSS</span>':e.type==='elite'?'<span class="tag q-purple">精英</span>':''):'';
     const statusE=e?[(e.stun>0?'😵眩晕':''),...(e.dots||[]).map(d=>'🩸'+d.name),...(e.debuffs||[]).map(d=>'⬇'+d.name)].filter(Boolean).join(' '):'';
     const statusP=[...(st.pBuffs||[]).map(b=>'⬆'+b.name),(st.pShield>0?'🛡️护盾'+st.pShield:''),(st.pStun>0?'😵被控':'')].filter(Boolean).join(' ');
@@ -230,8 +229,7 @@
       <div id="combat">
         <div class="vs">
           <div class="fighter"><div class="fn">${cls.icon}${E(G.name)} <span class="tiny">Lv${G.level}</span></div>
-            <div class="cbar"><i style="width:${phpPct}%"></i></div><div class="tiny dim">${G.hpCur}/${G.maxHp}</div>
-            <div class="cbar m"><i style="width:${pmpPct}%"></i></div><div class="tiny dim">${cls.resource} ${G.mpCur}/${G.maxMp}</div>
+            <div class="tiny dim">血量见顶部状态栏</div>
             <div class="tiny" style="color:#7be07b">${statusP||'&nbsp;'}</div></div>
           <div class="fighter enemy">${e?`<div class="fn">${e.icon}${E(e.name)} ${enemyTag}<span class="tiny">Lv${e.level}</span></div>
             <div class="cbar"><i style="width:${ehpPct}%"></i></div><div class="tiny dim">${e.hp}/${e.maxHp}</div>

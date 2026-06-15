@@ -103,7 +103,7 @@ DATA.classes = {
 // ===================== 技能库 =====================
 DATA.skills = {
   // ---- 盗贼 ----
-  r_stealth:{name:'潜行',icon:'🌑',type:'active',reqLevel:1,mpCost:10,cooldown:4,desc:'隐入阴影，下一击必定暴击。',effect:{kind:'buff',buff:{stat:'crit',amt:100,turns:1}}},
+  r_stealth:{name:'潜行',icon:'🌑',type:'active',reqLevel:1,mpCost:10,cooldown:4,desc:'隐入阴影，下一击必定暴击。',effect:{kind:'buff',buff:{stat:'crit',amt:100,turns:2}}},
   r_sinister:{name:'要害攻击',icon:'🗡️',type:'active',reqLevel:1,mpCost:8,cooldown:0,desc:'快速突刺，造成攻击130%伤害。',effect:{kind:'damage',mult:1.3}},
   r_gouge:{name:'闷击',icon:'😵',type:'active',reqLevel:3,mpCost:12,cooldown:3,desc:'击晕目标1回合并造成伤害。',effect:{kind:'stun',mult:0.7,stunTurns:1}},
   r_ambush:{name:'刺杀',icon:'🔪',type:'active',reqLevel:5,mpCost:18,cooldown:2,desc:'致命一击，攻击180%伤害，潜行下伤害更高。',effect:{kind:'damage',mult:1.8}},
