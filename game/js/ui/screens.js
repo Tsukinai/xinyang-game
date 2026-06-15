@@ -39,7 +39,7 @@
     svc.push(['🛏️','休整恢复',`Act.rest()`,1]);
     if(sv.auction) svc.push(['💰','拍卖行',`Act.auction()`,12]);
     if(sv.library) svc.push(['📚','图书馆',`Act.library()`,8]);
-    const grow=[['🧵','生活技能',`Act.go('profession')`,5],['🐎','坐骑宠物',`Act.go('stable')`,10],
+    const grow=[['📖','图鉴',`Act.go('codex')`,1],['🧵','生活技能',`Act.go('profession')`,5],['🐎','坐骑宠物',`Act.go('stable')`,10],
       ['🐮','公会',`Act.go('guild')`,10],['🎲','神龛·命骰',`Act.diceScreen()`,3],['🗺️','传送',`Act.go('map')`,1]];
     const gx=arr=>`<div class="grid3">${arr.map(([i,t,fn,req])=>{ const lock=(req||1)>G.level;
       return `<button ${lock?'disabled':''} onclick="${lock?'':fn}"><div style="font-size:18px">${lock?'🔒':i}</div>
@@ -335,7 +335,41 @@
       <div class="btns"><button class="ghost full" onclick="Act.go('town')">离开</button></div>`;
   }
 
-  window.Screens={ charcreate, town, zonelist, dungeonlist, character, bag, skills, quests, map, shop, combat, forge, diceScreen };
+  // ============ 图鉴 ============
+  function codex(){
+    const tab=UI.state._codexTab||'sets';
+    const ownedId=id=>(G.equip&&Object.keys(G.equip).some(s=>G.equip[s]&&G.equip[s].id===id))||(G.bag||[]).some(b=>b.id===id);
+    const seg=`<div class="seg">
+      <button class="segbtn ${tab==='sets'?'on':''}" onclick="Act.codexTab('sets')">套装图鉴</button>
+      <button class="segbtn ${tab==='uniq'?'on':''}" onclick="Act.codexTab('uniq')">传说图鉴</button></div>`;
+    let body='';
+    if(tab==='sets'){
+      const ids=Object.keys(DATA.sets); let complete=0;
+      const cards=ids.map(sid=>{ const s=DATA.sets[sid]; const pcs=s.pieces||[];
+        const have=pcs.filter(ownedId).length; if(pcs.length&&have===pcs.length) complete++;
+        const pcHtml=pcs.map(pid=>{ const d=DATA.items[pid]; const o=ownedId(pid);
+          return `<span class="${o?UI.qcls(d&&d.quality):''}" style="${o?'':'opacity:.4'}">${o?'✓':'·'}${E((d&&d.name)||pid)}</span>`; }).join('　');
+        const bonusHtml=Object.keys(s.bonus||{}).sort((a,b)=>a-b).map(t=>`<div class="tiny ${have>=+t?'q-gold':'dim'}">${have>=+t?'✓ ':'　'}${E((s.bonus[t]||{}).desc||(t+'件'))}</div>`).join('');
+        return `<div class="card"><div class="ct"><span class="nm">${E(s.name)}</span><span class="rt ${pcs.length&&have===pcs.length?'q-gold':'dim'}">${have}/${pcs.length}</span></div>
+          <div class="tiny" style="margin:3px 0;line-height:1.7">${pcHtml}</div>${bonusHtml}</div>`;
+      }).join('');
+      body=`<div class="dim tiny" style="margin:4px 0">已集齐 <b class="q-gold">${complete}</b> / ${ids.length} 套</div>${cards}`;
+    } else {
+      const ids=[...new Set(DATA.eggItems||[])].filter(id=>DATA.items[id]);
+      ids.sort((a,b)=>(DATA.items[a].reqLevel||0)-(DATA.items[b].reqLevel||0));
+      let owned=0;
+      const cards=ids.map(id=>{ const d=DATA.items[id]; const o=ownedId(id); if(o)owned++;
+        const procTxt=(d.procs||[]).map(p=>p.name).join('、');
+        return `<div class="card" style="${o?'':'opacity:.55'}"><div class="ct"><span class="ico">${d.icon||'✨'}</span>
+          <span class="nm ${UI.qcls(d.quality)}">${o?'':'🔒'}${E(d.name)}</span><span class="rt tiny">Lv${d.reqLevel||1}</span></div>
+          <div class="tiny dim">${E(d.desc||'')}${procTxt?` <span class="q-gold">触发：${E(procTxt)}</span>`:''}</div></div>`;
+      }).join('');
+      body=`<div class="dim tiny" style="margin:4px 0">已收集 <b class="q-gold">${owned}</b> / ${ids.length} 件传说神器</div>${cards}`;
+    }
+    return `<h2 class="title">📖 图鉴</h2>${seg}<div class="list">${body}</div>`;
+  }
+
+  window.Screens={ charcreate, town, zonelist, dungeonlist, character, bag, skills, quests, map, shop, combat, forge, diceScreen, codex };
 
   // ============ 生活技能 ============
   function profession(){

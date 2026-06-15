@@ -101,6 +101,7 @@
       M(`<div>${UI.itemTip(it)}</div>${cmp}<div class="btns">${btns.join('')}<button class="ghost" onclick="UI.closeModal()">关闭</button></div>`);
     },
     bagTab(i){ UI.state._bagTab=i; UI.state._keepScroll=true; render(); },
+    codexTab(t){ UI.state._codexTab=t; UI.state._keepScroll=true; render(); },
     equipBag(i){ const r=Systems.equip(i); if(r&&r.ok){ Save.save(); CM(); render(); T('已装备'); } else T((r&&r.why)||'无法装备'); },
     unequip(slot){ Systems.unequip(slot); Save.save(); CM(); render(); T('已卸下'); },
     useBag(i){ const it=G.bag[i]; if(!it) return; const d=DATA.items[it.id]; if(!d||!d.use) return;
@@ -223,9 +224,20 @@
         const locked=df.minClear&&cl<df.minClear;
         return `<button class="${df.key==='normal'?'primary':''}" ${locked?'disabled':''} onclick="Act.startDungeon('${dgId}','${df.key}')">${df.name}${locked?'(需先通关普通)':''}</button>`;
       }).join('');
+      // 掉落预览：BOSS 具名掉落 + 首通奖励
+      const boss=DATA.monsters[d.boss]||{};
+      const seen={};
+      const dropLines=(boss.drops||[]).map(dr=>{ const it=DATA.items[dr.item]; if(!it||seen[dr.item])return ''; seen[dr.item]=1;
+        return `<div class="tiny"><span class="${UI.qcls(it.quality)}">${UI.esc(it.name)}</span> <span class="dim">${Math.round((dr.chance||0)*100)}%</span></div>`; }).filter(Boolean).join('');
+      const fc=(d.firstClear&&d.firstClear.items||[]).map(it=>{ const di=DATA.items[it.id]; return di?`<span class="${UI.qcls(di.quality)}">${UI.esc(di.name)}${it.qty>1?'×'+it.qty:''}</span>`:''; }).filter(Boolean).join('、');
+      const lootHtml=`<div class="loot-preview"><div class="tiny q-gold">📦 可能掉落（BOSS）</div>
+        ${dropLines||'<div class="tiny dim">随机词缀装备</div>'}
+        <div class="tiny dim" style="margin-top:3px">另有几率掉落随机词缀装备与传说神器✨</div>
+        ${fc?`<div class="tiny" style="margin-top:3px"><span class="q-gold">首通奖励：</span>${fc}</div>`:''}</div>`;
       M(`<h3>${d.icon} ${UI.esc(d.name)} <span class="tiny dim">Lv${d.levelRange[0]}-${d.levelRange[1]}</span></h3>
         ${d.story?`<div class="narr">${UI.esc(d.story)}</div>`:''}
-        <p class="tiny dim">波次：${d.waves.length} 波 + BOSS【${(DATA.monsters[d.boss]||{}).name||''}】。专家级血厚、爆率高。</p>
+        <p class="tiny dim">波次：${d.waves.length} 波 + BOSS【${boss.name||''}】。专家级血厚、爆率高。</p>
+        ${lootHtml}
         <div class="btns">${diffs}</div><div class="btns"><button class="ghost full" onclick="UI.closeModal()">取消</button></div>`);
     },
     startDungeon(dgId, diffKey){
