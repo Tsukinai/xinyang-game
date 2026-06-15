@@ -115,12 +115,25 @@
         <div class="ct"><span class="ico">${slotIcon(s)}</span>
           <div><div class="tiny dim">${DATA.slots[s]}</div>${it?iname(it):'<span class="dim tiny">（空）</span>'}</div></div></div>`;
     }).join('');
-    const items=(G.bag||[]).map((it,i)=>{ const d=UI.itemDef(it);
-      return `<div class="card btn" onclick="Act.itemModal('bag',${i})">
+    // 背包分类（保留原索引用于 itemModal）
+    const cats=[
+      {name:'⚔️ 装备', test:d=>!!d.slot},
+      {name:'🧪 消耗品', test:d=>d.use && !(d.use.learnSkill||d.use.learnLife)},
+      {name:'📖 技能书', test:d=>d.use && (d.use.learnSkill||d.use.learnLife)},
+      {name:'💎 材料/其他', test:()=>true},
+    ];
+    const entries=(G.bag||[]).map((it,i)=>({it,i,d:UI.itemDef(it)}));
+    const catOf=d=>{ for(let c=0;c<cats.length;c++) if(cats[c].test(d)) return c; return cats.length-1; };
+    const groups=cats.map(()=>[]);
+    for(const e of entries) groups[catOf(e.d)].push(e);
+    groups[0].sort((a,b)=>slotsOrder.indexOf(a.d.slot)-slotsOrder.indexOf(b.d.slot)); // 装备按槽位排序
+    const renderItem=({it,i,d})=>`<div class="card btn" onclick="Act.itemModal('bag',${i})">
         <div class="ct"><span class="ico">${d.icon||'📦'}</span>
           <div>${iname(it)}${it.qty>1?` <span class="dim tiny">×${it.qty}</span>`:''}
           <div class="ds">${E(d.type||'')}${d.slot?' · '+(DATA.slots[d.slot]||''):''}</div></div></div></div>`;
-    }).join('')||'<div class="empty">背包空空如也</div>';
+    const sections=cats.map((c,ci)=>{ if(!groups[ci].length) return '';
+      return `<h4 class="bagcat">${c.name}<span class="dim tiny"> ${groups[ci].length}</span></h4>
+        <div class="list">${groups[ci].map(renderItem).join('')}</div>`; }).join('');
     const pNon=Systems.bulkSellPreview('nonclass'), pLow=Systems.bulkSellPreview('lowlevel');
     return `<h2 class="title">🎒 背包与装备<small>${money(G.gold)}</small></h2>
       <h3 class="sub">已装备</h3><div class="list">${eq}</div>
@@ -129,7 +142,7 @@
         <button class="ghost" onclick="Act.bulkSell('nonclass')">一键卖·非本职业(${pNon.count})</button>
         <button class="ghost" onclick="Act.bulkSell('lowlevel')">一键卖·低级装备(${pLow.count})</button>
       </div>
-      <div class="list">${items}</div>`;
+      ${sections||'<div class="empty">背包空空如也</div>'}`;
   }
   function slotIcon(s){ return ({weapon:'🗡️',offhand:'🛡️',head:'⛑️',shoulder:'🧣',chest:'🦺',hand:'🧤',waist:'🩹',legs:'👖',feet:'👢',cloak:'🧥',neck:'📿',ring1:'💍',ring2:'💍',trinket:'🎖️'})[s]||'📦'; }
 

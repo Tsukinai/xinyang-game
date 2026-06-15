@@ -93,7 +93,8 @@
         if(d.slot) btns.push(`<button class="primary" onclick="Act.equipBag(${key})">装备</button>`);
         btns.push(`<button class="ghost" onclick="Act.sellBag(${key})">卖出</button>`);
       }
-      M(`<div>${UI.itemTip(it)}</div><div class="btns">${btns.join('')}<button class="ghost" onclick="UI.closeModal()">关闭</button></div>`);
+      const cmp=(!isEquip && d.slot)?UI.itemCompare(it):'';
+      M(`<div>${UI.itemTip(it)}</div>${cmp}<div class="btns">${btns.join('')}<button class="ghost" onclick="UI.closeModal()">关闭</button></div>`);
     },
     equipBag(i){ const r=Systems.equip(i); if(r&&r.ok){ Save.save(); CM(); render(); T('已装备'); } else T((r&&r.why)||'无法装备'); },
     unequip(slot){ Systems.unequip(slot); Save.save(); CM(); render(); T('已卸下'); },

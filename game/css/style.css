@@ -42,6 +42,8 @@ h2.title{font-size:17px;color:var(--gold);margin:2px 0 10px;
   display:flex;align-items:center;gap:8px}
 h2.title small{margin-left:auto;font-size:11px;color:var(--ink-dim);font-weight:400}
 h3.sub{font-size:14px;color:var(--gold-d);margin:14px 0 6px;letter-spacing:.5px}
+h4.bagcat{font-size:12px;color:var(--ink-dim);margin:10px 0 4px;font-weight:600}
+.cmp{margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
 p{margin:6px 0}
 .dim{color:var(--ink-dim)}
 .tiny{font-size:12px}

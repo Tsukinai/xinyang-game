@@ -49,6 +49,31 @@
       ${d.desc?`<p class="tiny dim">${esc(d.desc)}</p>`:''}`;
   }
 
+  // 装备目标槽位（复制 Systems.equip 的双戒指逻辑）
+  function equipTargetSlot(d){
+    let slot=d.slot;
+    if(slot==='ring1' && G.equip.ring1 && !G.equip.ring2) slot='ring2';
+    return slot;
+  }
+  // 背包装备 vs 已穿戴 的属性对比 HTML
+  function itemCompare(it){
+    const d=itemDef(it); if(!d||!d.slot) return '';
+    const slot=equipTargetSlot(d);
+    const old=G.equip[slot];
+    const slotName=DATA.slots[slot]||d.type||'';
+    if(!old) return `<div class="cmp"><div class="tiny dim">该部位（${slotName}）当前为空，装备后净增上方全部属性。</div></div>`;
+    const ns=window.Systems?Systems.itemStats(it):(d.stats||{});
+    const os=window.Systems?Systems.itemStats(old):((itemDef(old)||{}).stats||{});
+    const map={str:'力量',agi:'敏捷',int:'智力',sta:'体质',spi:'精神',atk:'攻击',sp:'法术强度',armor:'护甲',hp:'生命',mp:'法力',crit:'暴击%',dodge:'闪避%',haste:'急速'};
+    const keys=Object.keys(map).filter(k=>ns[k]||os[k]);
+    const rows=keys.map(k=>{ const nv=ns[k]||0, ov=os[k]||0, dv=nv-ov;
+      const col=dv>0?'#7be07b':dv<0?'#e07b7b':'var(--ink-dim)'; const sign=dv>0?'+':'';
+      return `<div class="kv"><span>${map[k]}</span><b>${ov} → ${nv} <span style="color:${col}">(${sign}${dv})</span></b></div>`;
+    }).join('');
+    return `<div class="cmp"><div class="tiny dim">对比已穿（${slotName}）：${itemName(old)}${old.plus?' +'+old.plus:''}</div>
+      <div class="stats" style="grid-template-columns:1fr">${rows}</div></div>`;
+  }
+
   // ---------- 状态栏 ----------
   function renderStatus(){
     const sb=$('statusbar'); if(!sb) return;
@@ -89,6 +114,6 @@
     return n?`<span class="badge">${n}</span>`:'';
   }
 
-  window.UI = { $, esc, toast, modal, closeModal, money, qcls, qname, itemName, itemDef, itemTip,
+  window.UI = { $, esc, toast, modal, closeModal, money, qcls, qname, itemName, itemDef, itemTip, itemCompare,
     renderStatus, renderNav, state:{ screen:'charcreate', ctx:null } };
 })();
